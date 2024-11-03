@@ -16,4 +16,5 @@ features:
 - picture in picture, looks rounded with shadow, better
 - customize color with chrome://customize-chrome-side-panel.top-chrome
 - new tab page actually blank
+- use youtube-music instead of spotify. torrent instead of netflix.
 - other things that i dont remember

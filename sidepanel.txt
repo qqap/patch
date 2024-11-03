@@ -15,4 +15,5 @@ features:
 - omnibox also blurred transparent, which looks nice
 - picture in picture, looks rounded with shadow, better
 - customize color with chrome://customize-chrome-side-panel.top-chrome
+- new tab page actually blank
 - other things that i dont remember

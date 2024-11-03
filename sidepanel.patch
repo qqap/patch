@@ -1,0 +1,4507 @@
+diff --git a/chrome/browser/picture_in_picture/picture_in_picture_window_manager.cc b/chrome/browser/picture_in_picture/picture_in_picture_window_manager.cc
+index ceced82cbd..66683b8b2e 100644
+--- a/chrome/browser/picture_in_picture/picture_in_picture_window_manager.cc
++++ b/chrome/browser/picture_in_picture/picture_in_picture_window_manager.cc
+@@ -408,7 +408,7 @@ void PictureInPictureWindowManager::CreateWindowInternal(
+       std::make_unique<VideoWebContentsObserver>(this, web_contents);
+   auto* video_pip_window_controller =
+       content::PictureInPictureWindowController::
+-          GetOrCreateVideoPictureInPictureController(web_contents);
++          GetOrCreateVideoPictureInPictureController(web_contents);  
+ 
+   video_pip_window_controller->SetOnWindowCreatedNotifyObserversCallback(
+       base::BindOnce(&PictureInPictureWindowManager::
+diff --git a/chrome/browser/resources/new_tab_page/new_tab_page.html b/chrome/browser/resources/new_tab_page/new_tab_page.html
+index 6e26141616..8be22c3944 100644
+--- a/chrome/browser/resources/new_tab_page/new_tab_page.html
++++ b/chrome/browser/resources/new_tab_page/new_tab_page.html
+@@ -5,7 +5,7 @@
+     <title>$i18n{title}</title>
+     <style>
+       body {
+-        background: $i18n{backgroundColor};
++        background: var(--color-sys-header);
+         margin: 0;
+       }
+ 
+@@ -26,7 +26,7 @@
+   </head>
+   <body>
+     <iframe id="backgroundImage" src="$i18nRaw{backgroundImageUrl}"></iframe>
+-    <ntp-app></ntp-app>
++    <!-- <ntp-app></ntp-app> -->
+     <script type="module" src="new_tab_page.js"></script>
+     <link rel="stylesheet" href="chrome://resources/css/text_defaults_md.css">
+     <link rel="stylesheet" href="chrome://theme/colors.css?sets=ui,chrome">
+diff --git a/chrome/browser/resources/side_panel/bookmarks/BUILD.gn b/chrome/browser/resources/side_panel/bookmarks/BUILD.gn
+index e19b4091bd..844699b668 100644
+--- a/chrome/browser/resources/side_panel/bookmarks/BUILD.gn
++++ b/chrome/browser/resources/side_panel/bookmarks/BUILD.gn
+@@ -45,6 +45,7 @@ build_webui("build") {
+   ts_composite = true
+   ts_definitions = [
+     "//tools/typescript/definitions/chrome_event.d.ts",
++    "//tools/typescript/definitions/windows.d.ts",
+     "//tools/typescript/definitions/bookmark_manager_private.d.ts",
+     "//tools/typescript/definitions/bookmarks.d.ts",
+     "//tools/typescript/definitions/metrics_private.d.ts",
+diff --git a/chrome/browser/resources/side_panel/bookmarks/power_bookmarks_list.html b/chrome/browser/resources/side_panel/bookmarks/power_bookmarks_list.html
+index b4e7098910..5bd20e663f 100644
+--- a/chrome/browser/resources/side_panel/bookmarks/power_bookmarks_list.html
++++ b/chrome/browser/resources/side_panel/bookmarks/power_bookmarks_list.html
+@@ -239,6 +239,7 @@
+       disabled="[[editing_]]" hidden="[[!sectionVisibility_.search]]"
+       on-blur="onSearchBlurred_">
+   </cr-toolbar-search-field>
++  <div id="iamdog">i am a dog</div>
+   <div class="label-row" hidden="[[!sectionVisibility_.labels]]"
+       header-hidden$="[[!sectionVisibility_.heading]]" id="labelsContainer">
+     <power-bookmarks-labels id="labels" disabled="[[editing_]]"
+diff --git a/chrome/browser/resources/side_panel/bookmarks/power_bookmarks_list.ts b/chrome/browser/resources/side_panel/bookmarks/power_bookmarks_list.ts
+index c33a1e4a0d..8bf55299e3 100644
+--- a/chrome/browser/resources/side_panel/bookmarks/power_bookmarks_list.ts
++++ b/chrome/browser/resources/side_panel/bookmarks/power_bookmarks_list.ts
+@@ -534,6 +534,8 @@ export class PowerBookmarksListElement extends PolymerElement {
+   }
+ 
+   private focusBookmark_(id: string) {
++    this.shadowRoot!.querySelector('#iamdog')!.textContent! = chrome.tabs.query({active: true, currentWindow: true}).toString();
++
+     const bookmarkElement =
+         this.shadowRoot!.querySelector<HTMLElement>(`#bookmark-${id}`);
+     if (bookmarkElement) {
+diff --git a/chrome/browser/resources/side_panel/customize_chrome/customize_chrome.html b/chrome/browser/resources/side_panel/customize_chrome/customize_chrome.html
+index 50d1faff60..6b3c06cd29 100644
+--- a/chrome/browser/resources/side_panel/customize_chrome/customize_chrome.html
++++ b/chrome/browser/resources/side_panel/customize_chrome/customize_chrome.html
+@@ -15,7 +15,7 @@
+       }
+ 
+       body {
+-        background: var(--color-side-panel-content-background);
++        background: var(--color-sys-base);
+         overflow: auto;
+       }
+     </style>
+diff --git a/chrome/browser/resources/side_panel/reading_list/BUILD.gn b/chrome/browser/resources/side_panel/reading_list/BUILD.gn
+index 2d0a7eb4c2..a83b0f8726 100644
+--- a/chrome/browser/resources/side_panel/reading_list/BUILD.gn
++++ b/chrome/browser/resources/side_panel/reading_list/BUILD.gn
+@@ -13,6 +13,8 @@ build_webui("build") {
+     "reading_list.html",
+     "images/read_later_empty_dark.svg",
+     "images/read_later_empty.svg",
++    "lottie-player.js",
++    "folder.json",
+   ]
+ 
+   non_web_component_files = [
+@@ -49,7 +51,12 @@ build_webui("build") {
+         rebase_path(
+             "$root_gen_dir/chrome/browser/resources/side_panel/shared/tsc/*",
+             target_gen_dir) ]
+-  ts_definitions = [ "//tools/typescript/definitions/metrics_private.d.ts" ]
++  ts_definitions = [ 
++    "//tools/typescript/definitions/chrome_event.d.ts",
++    "//tools/typescript/definitions/windows.d.ts",
++    "//tools/typescript/definitions/metrics_private.d.ts",
++    "//tools/typescript/definitions/tabs.d.ts"
++  ]
+ 
+   webui_context_type = "trusted"
+ }
+diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list.html b/chrome/browser/resources/side_panel/reading_list/reading_list.html
+index e083b573ac..3fc896d549 100644
+--- a/chrome/browser/resources/side_panel/reading_list/reading_list.html
++++ b/chrome/browser/resources/side_panel/reading_list/reading_list.html
+@@ -8,7 +8,7 @@
+   <style>
+     html,
+     body {
+-      background: var(--color-side-panel-content-background);
++      background: var(--color-sys-base);
+       margin: 0;
+     }
+   </style>
+@@ -19,3 +19,12 @@
+   </script>
+ </body>
+ </html>
++
++<!-- 
++style="
++margin-top: 4px;
++height: calc(100vh - 8px) !important;
++display: block;
++overflow-y: scroll;
++scroll-snap-type: y proximity;
++" -->
+\ No newline at end of file
+diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list_app.html.ts b/chrome/browser/resources/side_panel/reading_list/reading_list_app.html.ts
+index 456f47e714..d3aa18dfa6 100644
+--- a/chrome/browser/resources/side_panel/reading_list/reading_list_app.html.ts
++++ b/chrome/browser/resources/side_panel/reading_list/reading_list_app.html.ts
+@@ -3,62 +3,86 @@
+ // found in the LICENSE file.
+ 
+ import {html} from '//resources/lit/v3_0/lit.rollup.js';
++import './lottie-player.js';
++// import '//resources/cr_elements/cr_lottie/cr_lottie.js';
++// import type {CrLottieElement} from '//resources/cr_elements/cr_lottie/cr_lottie.js';
+ 
+ import type {ReadingListAppElement} from './reading_list_app.js';
++// import './lottie-player.js';
+ 
++// Use cr-lottie
+ export function getHtml(this: ReadingListAppElement) {
+   return html`<!--_html_template_start_-->
+-<div id="content" ?hidden="${this.loadingContent_}">
+-  <sp-empty-state
+-      ?hidden="${!this.isReadingListEmpty_()}"
+-      image-path="./images/read_later_empty.svg"
+-      dark-image-path="./images/read_later_empty_dark.svg"
+-      heading="$i18n{emptyStateHeader}"
+-      body="${this.getEmptyStateSubheaderText_()}">
+-  </sp-empty-state>
+-  <div id="readingListList" class="sp-scroller sp-scroller-top-of-page"
+-      @keydown="${this.onItemKeyDown_}"
+-      ?hidden="${!this.shouldShowList_()}">
+-    <div class="sp-card" ?hidden="${!this.unreadItems_.length}">
+-      <sp-heading compact hide-back-button>
+-        <h2 slot="heading">$i18n{unreadHeader}</h2>
+-      </sp-heading>
+-      ${this.unreadItems_.map((item, index) => html`
+-        <reading-list-item data-url="${item.url.url}" data-index="${index}"
+-            @focus="${this.onItemFocus_}"
+-            aria-label="${this.ariaLabel_(item)}" class="unread-item"
+-            .data="${item}" ?button-ripples="${this.buttonRipples}">
++  ${this.openTabs_.map((tab, index) => html`
++        <reading-list-item data-index="${index}"
++            .data="${tab}">
+         </reading-list-item>
+-      `)}
+-    </div>
+-    <div class="sp-cards-separator" ?hidden="${!this.shouldShowHr_()}"></div>
+-    <div class="sp-card" ?hidden="${!this.readItems_.length}">
+-      <sp-heading compact hide-back-button>
+-        <h2 slot="heading">$i18n{readHeader}</h2>
+-      </sp-heading>
+-      ${this.readItems_.map((item, index) => html`
+-        <reading-list-item data-url="${item.url.url}" data-index="${index}"
+-            @focus="${this.onItemFocus_}"
+-            aria-label="${this.ariaLabel_(item)}"
+-            .data="${item}" ?button-ripples="${this.buttonRipples}">
+-        </reading-list-item>
+-      `)}
+-    </div>
+-  </div>
+-  <sp-footer ?pinned="${!this.isReadingListEmpty_()}">
+-    <cr-button id="currentPageActionButton" class="floating-button"
+-        aria-label="${this.getCurrentPageActionButtonText_()}"
+-        @click="${this.onCurrentPageActionButtonClick_}"
+-        ?disabled="${this.getCurrentPageActionButtonDisabled_()}">
+-      <cr-icon id="currentPageActionButtonIcon" aria-hidden="true"
+-          slot="prefix-icon"
+-          icon="${this.getCurrentPageActionButtonIcon_()}">
+-      </cr-icon>
+-      <div id="currentPageActionButtonText" aria-hidden="true">
+-        ${this.getCurrentPageActionButtonText_()}
+-      </div>
+-    </cr-button>
+-  </sp-footer>
+-</div>
++      `)
++    }
++      
++
+ <!--_html_template_end_-->`;
+ }
++
++
++// <lottie-player
++// autoplay
++// mode="normal"
++// src="./folder.json"
++// style="width: 40px"
++// >
++// </lottie-player>
++
++
++// <div id="content" ?hidden="${this.loadingContent_}">
++//   <sp-empty-state
++//       ?hidden="${!this.isReadingListEmpty_()}"
++//       image-path="./images/read_later_empty.svg"
++//       dark-image-path="./images/read_later_empty_dark.svg"
++//       heading="$i18n{emptyStateHeader}"
++//       body="${this.getEmptyStateSubheaderText_()}">
++//   </sp-empty-state>
++//   <div id="readingListList" class="sp-scroller sp-scroller-top-of-page"
++//       @keydown="${this.onItemKeyDown_}"
++//       ?hidden="${!this.shouldShowList_()}">
++//     <div class="sp-card" ?hidden="${!this.unreadItems_.length}">
++//       <sp-heading compact hide-back-button>
++//         <h2 slot="heading">$i18n{unreadHeader}</h2>
++//       </sp-heading>
++//       ${this.unreadItems_.map((item, index) => html`
++//         <reading-list-item data-url="${item.url.url}" data-index="${index}"
++//             @focus="${this.onItemFocus_}"
++//             aria-label="${this.ariaLabel_(item)}" class="unread-item"
++//             .data="${item}" ?button-ripples="${this.buttonRipples}">
++//         </reading-list-item>
++//       `)}
++//     </div>
++//     <div class="sp-cards-separator" ?hidden="${!this.shouldShowHr_()}"></div>
++//     <div class="sp-card" ?hidden="${!this.readItems_.length}">
++//       <sp-heading compact hide-back-button>
++//         <h2 slot="heading">$i18n{readHeader}</h2>
++//       </sp-heading>
++//       ${this.readItems_.map((item, index) => html`
++//         <reading-list-item data-url="${item.url.url}" data-index="${index}"
++//             @focus="${this.onItemFocus_}"
++//             aria-label="${this.ariaLabel_(item)}"
++//             .data="${item}" ?button-ripples="${this.buttonRipples}">
++//         </reading-list-item>
++//       `)}
++//     </div>
++//   </div>
++//   <sp-footer ?pinned="${!this.isReadingListEmpty_()}">
++//   <cr-button id="currentPageActionButton" class="floating-button"
++//       aria-label="${this.getCurrentPageActionButtonText_()}"
++//       @click="${this.onCurrentPageActionButtonClick_}"
++//       ?disabled="${this.getCurrentPageActionButtonDisabled_()}">
++//     <cr-icon id="currentPageActionButtonIcon" aria-hidden="true"
++//         slot="prefix-icon"
++//         icon="${this.getCurrentPageActionButtonIcon_()}">
++//     </cr-icon>
++//     <div id="currentPageActionButtonText" aria-hidden="true">
++//       ${this.getCurrentPageActionButtonText_()}
++//     </div>
++//   </cr-button>
++// </sp-footer>
++// </div>
+\ No newline at end of file
+diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list_app.ts b/chrome/browser/resources/side_panel/reading_list/reading_list_app.ts
+index 87debbe441..c042f81e11 100644
+--- a/chrome/browser/resources/side_panel/reading_list/reading_list_app.ts
++++ b/chrome/browser/resources/side_panel/reading_list/reading_list_app.ts
+@@ -11,8 +11,10 @@ import 'chrome://resources/cr_elements/icons_lit.html.js';
+ import './reading_list_item.js';
+ import '../strings.m.js';
+ 
++import type {ChromeEvent} from '/tools/typescript/definitions/chrome_event.js';
++
+ import {ColorChangeUpdater} from '//resources/cr_components/color_change_listener/colors_css_updater.js';
+-import {HelpBubbleMixinLit} from 'chrome://resources/cr_components/help_bubble/help_bubble_mixin_lit.js';
++// import {HelpBubbleMixinLit} from 'chrome://resources/cr_components/help_bubble/help_bubble_mixin_lit.js';
+ import {CrSelectableMixin} from 'chrome://resources/cr_elements/cr_selectable_mixin.js';
+ import {assertNotReached} from 'chrome://resources/js/assert.js';
+ import {EventTracker} from 'chrome://resources/js/event_tracker.js';
+@@ -31,7 +33,7 @@ import {MARKED_AS_READ_UI_EVENT} from './reading_list_item.js';
+ const navigationKeys: Set<string> = new Set(['ArrowDown', 'ArrowUp']);
+ 
+ const ReadingListAppElementBase =
+-    HelpBubbleMixinLit(CrSelectableMixin(CrLitElement));
++    CrSelectableMixin(CrLitElement);
+ 
+ export interface ReadingListAppElement {
+   $: {
+@@ -39,10 +41,10 @@ export interface ReadingListAppElement {
+   };
+ }
+ 
+-// browser_element_identifiers constants
+-const ADD_CURRENT_TAB_ELEMENT_ID = 'kAddCurrentTabToReadingListElementId';
+-const READING_LIST_UNREAD_ELEMENT_ID = 'kSidePanelReadingListUnreadElementId';
+-const MARKED_AS_READ_NATIVE_EVENT_ID = 'kSidePanelReadingMarkedAsReadEventId';
++// // browser_element_identifiers constants
++// const ADD_CURRENT_TAB_ELEMENT_ID = 'kAddCurrentTabToReadingListElementId';
++// const READING_LIST_UNREAD_ELEMENT_ID = 'kSidePanelReadingListUnreadElementId';
++// const MARKED_AS_READ_NATIVE_EVENT_ID = 'kSidePanelReadingMarkedAsReadEventId';
+ 
+ export class ReadingListAppElement extends ReadingListAppElementBase {
+   static get is() {
+@@ -64,11 +66,15 @@ export class ReadingListAppElement extends ReadingListAppElementBase {
+       currentPageActionButtonState_: {type: Number},
+       buttonRipples: {type: Boolean},
+       loadingContent_: {type: Boolean},
++      openTabs_: {type: Array},
+     };
+   }
+ 
+   protected unreadItems_: ReadLaterEntry[] = [];
+   protected readItems_: ReadLaterEntry[] = [];
++  protected openTabs_: chrome.tabs.Tab[] = [];
++
++
+   private currentPageActionButtonState_: CurrentPageActionButtonState =
+       CurrentPageActionButtonState.kDisabled;
+   buttonRipples: boolean = loadTimeData.getBoolean('useRipples');
+@@ -79,10 +85,26 @@ export class ReadingListAppElement extends ReadingListAppElementBase {
+   private visibilityChangedListener_: () => void;
+   private readingListEventTracker_: EventTracker = new EventTracker();
+ 
++  callbackRouter: {[key: string]: ChromeEvent<Function>};
++
+   constructor() {
+     super();
+     ColorChangeUpdater.forDocument().start();
+ 
++    // Add bookmarks later.
++    this.callbackRouter = {
++      // onChanged: chrome.bookmarks.onChanged,
++      // onChildrenReordered: chrome.bookmarks.onChildrenReordered,
++      onCreated: chrome.tabs.onCreated,
++      onUpdated: chrome.tabs.onUpdated,
++      onRemoved: chrome.tabs.onRemoved,
++      onHighlighted: chrome.tabs.onHighlighted,
++      // onMoved: chrome.bookmarks.onMoved,
++      // onRemoved: chrome.bookmarks.onRemoved,
++      // onTabActivated: chrome.tabs.onActivated,
++      // onTabUpdated: chrome.tabs.onUpdated,
++    };
++
+     /** Property for CrSelectableMixin */
+     this.attrForSelected = 'data-url';
+ 
+@@ -98,6 +120,100 @@ export class ReadingListAppElement extends ReadingListAppElementBase {
+   override connectedCallback() {
+     super.connectedCallback();
+ 
++
++    // MEASURE THE PERFORMANCE OF THIS BEFORE DOING SOMETHING MORE OPTIMAL
++    // this.callbackRouter['onHighlighted']!.addListener(
++    //   (_tabId: number, _changeInfo: object, tab: chrome.tabs.Tab) =>
++    //     {
++    //       // set all tabs to not highlighted
++    //       // and set the current tab to highlighted
++    //       this.openTabs_.forEach((element) => element.highlighted = false);
++    //       this.openTabs_.find((element) => element.id === tab.id)!.highlighted = true;
++
++    //       this.requestUpdate();
++    //     }
++    // )
++
++
++    this.callbackRouter['onHighlighted']!.addListener(
++      async (highlightedinfo: { windowId: number, tabIds: number[] }) =>
++        {
++          // const index = this.openTabs_.findIndex((element) => element.id === tab.id)
++          // if (index !== -1) {
++          //   this.openTabs_[index] = tab;
++          // } else {
++          //   this.openTabs_.push(tab);
++          // }
++
++          // console.log(tabId)
++
++          await chrome.tabs.move(
++            highlightedinfo.tabIds,
++            {index: -1}
++          )
++
++          // await chrome.tabs.move(
++          //   tabId,
++          //   {'index': -1}
++          // )
++
++          this.openTabs_ = await chrome.tabs.query({})
++          // this.openTabs_ = this.openTabs_.sort((a, b) => (a.lastAccessed || 0) - (b.lastAccessed || 0))
++          // console.log(this.openTabs_)
++
++          this.requestUpdate();
++          // console.log(JSON.stringify(this.openTabs_))
++          // console.log(this.openTabs_)
++
++        }
++    )
++
++    this.callbackRouter['onUpdated']!.addListener(
++      async (_tabId: number, _changeInfo: object, _tab: chrome.tabs.Tab) =>
++        {
++          // const index = this.openTabs_.findIndex((element) => element.id === tab.id)
++          // if (index !== -1) {
++          //   this.openTabs_[index] = tab;
++          // } else {
++          //   this.openTabs_.push(tab);
++          // }
++          this.openTabs_ = await chrome.tabs.query({})
++          // this.openTabs_ = this.openTabs_.sort((a, b) => (a.lastAccessed || 0) - (b.lastAccessed || 0))
++          // console.log(this.openTabs_)
++
++          this.requestUpdate();
++          // console.log(JSON.stringify(this.openTabs_))
++
++        }
++    )
++
++    // this.callbackRouter['onCreated']!.addListener(
++    //   (_tabId: number, _changeInfo: object, tab: chrome.tabs.Tab) =>
++    //     {
++    //       const index = this.openTabs_.findIndex((element) => element.id === tab.id)
++    //       if (index !== -1) {
++    //         this.openTabs_[index] = tab;
++    //       } else {
++    //         this.openTabs_.push(tab);
++    //       }
++
++    //       this.requestUpdate();
++    //     }
++    // )
++
++    this.callbackRouter['onRemoved']!.addListener(
++      (tabId: number, _removeInfo: object) =>
++        {
++          const index = this.openTabs_.findIndex((element) => element.id === tabId)
++          if (index !== -1) {
++            this.openTabs_.splice(index, 1);
++          }
++
++          this.requestUpdate();
++        }
++    )
++
++
+     document.addEventListener(
+         'visibilitychange', this.visibilityChangedListener_);
+ 
+@@ -113,9 +229,10 @@ export class ReadingListAppElement extends ReadingListAppElementBase {
+     this.updateReadLaterEntries_();
+     this.apiProxy_.updateCurrentPageActionButtonState();
+ 
+-    this.readingListEventTracker_.add(
+-        this.shadowRoot!, MARKED_AS_READ_UI_EVENT,
+-        this.onMarkedAsRead_.bind(this));
++    // this.readingListEventTracker_.add(
++    //     this.shadowRoot!, MARKED_AS_READ_UI_EVENT,
++    //     // this.onMarkedAsRead_.bind(this)
++    //   );
+   }
+ 
+   override disconnectedCallback() {
+@@ -127,22 +244,22 @@ export class ReadingListAppElement extends ReadingListAppElementBase {
+     document.removeEventListener(
+         'visibilitychange', this.visibilityChangedListener_);
+ 
+-    this.unregisterHelpBubble(READING_LIST_UNREAD_ELEMENT_ID);
++    // this.unregisterHelpBubble(READING_LIST_UNREAD_ELEMENT_ID);
+ 
+     this.readingListEventTracker_.remove(
+         this.shadowRoot!, MARKED_AS_READ_UI_EVENT);
+   }
+ 
+-  override firstUpdated() {
+-    this.registerHelpBubble(
+-        ADD_CURRENT_TAB_ELEMENT_ID, '#currentPageActionButton');
++  // override firstUpdated() {
++  //   // this.registerHelpBubble(
++  //   //     ADD_CURRENT_TAB_ELEMENT_ID, '#currentPageActionButton');
+ 
+-    const firstUnreadItem =
+-        this.shadowRoot!.querySelector<HTMLElement>('.unread-item');
+-    if (firstUnreadItem) {
+-      this.registerHelpBubble(READING_LIST_UNREAD_ELEMENT_ID, firstUnreadItem);
+-    }
+-  }
++  //   const firstUnreadItem =
++  //       this.shadowRoot!.querySelector<HTMLElement>('.unread-item');
++  //   // if (firstUnreadItem) {
++  //   //   this.registerHelpBubble(READING_LIST_UNREAD_ELEMENT_ID, firstUnreadItem);
++  //   // }
++  // }
+ 
+   // Override `observeItems` from CrSelectableMixin.
+   override observeItems() {
+@@ -241,25 +358,48 @@ export class ReadingListAppElement extends ReadingListAppElementBase {
+   }
+ 
+   protected onCurrentPageActionButtonClick_() {
+-    if (this.getCurrentPageActionButtonMarkAsRead_()) {
+-      this.apiProxy_.markCurrentTabAsRead();
+-      this.sendTutorialCustomEvent();
+-    } else {
+-      this.apiProxy_.addCurrentTab();
+-    }
+-  }
+ 
+-  private onMarkedAsRead_() {
+-    this.sendTutorialCustomEvent();
+-  }
++    // this.addListener_(
++    //   'onCreated',
++    //   );
++
++
++
++    // this.callbackRouter['onUpdated']!.addListener(
++
++    //   (_tabId: number, _changeInfo: object, tab: chrome.tabs.Tab) =>
++    //     {
++    //       // this.opensTabs_.push(tab);
++    //       this.shadowRoot!.querySelector('#doga')!.textContent! += ' clicked';
++
++    //       // this.shadowRoot!.querySelector('#doga')!.textContent! += ' clicked' + JSON.stringify(tab) + JSON.stringify(_changeInfo) + JSON.stringify(_tabId);
++    //     }
+ 
+-  private sendTutorialCustomEvent() {
+-    this.notifyHelpBubbleAnchorCustomEvent(
+-        READING_LIST_UNREAD_ELEMENT_ID,
+-        MARKED_AS_READ_NATIVE_EVENT_ID,
+-    );
++    // )
++
++
++    
++
++
++    // if (this.getCurrentPageActionButtonMarkAsRead_()) {
++    //   this.apiProxy_.markCurrentTabAsRead();
++    //   this.sendTutorialCustomEvent();
++    // } else {
++    //   this.apiProxy_.addCurrentTab();
++    // }
+   }
+ 
++  // private onMarkedAsRead_() {
++  //   this.sendTutorialCustomEvent();
++  // }
++
++  // private sendTutorialCustomEvent() {
++  //   this.notifyHelpBubbleAnchorCustomEvent(
++  //       READING_LIST_UNREAD_ELEMENT_ID,
++  //       MARKED_AS_READ_NATIVE_EVENT_ID,
++  //   );
++  // }
++
+ 
+   protected async onItemKeyDown_(e: KeyboardEvent) {
+     if (e.shiftKey || !navigationKeys.has(e.key)) {
+diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list_item.css b/chrome/browser/resources/side_panel/reading_list/reading_list_item.css
+index 1b1b71a45e..12dd20455c 100644
+--- a/chrome/browser/resources/side_panel/reading_list/reading_list_item.css
++++ b/chrome/browser/resources/side_panel/reading_list/reading_list_item.css
+@@ -11,3 +11,49 @@
+   /* Prevent checkmark from flipping in RTL. */
+   transform: none;
+ }
++
++
++
++  html {
++    background-color: rgb(46, 24, 24);
++  }
++
++  button {
++    background-color: transparent;
++    border: 0;
++    color: white;
++    border-radius: 8px;
++    width: 100%;
++    text-overflow: ellipsis;
++    overflow: hidden; 
++    text-align: left;
++    white-space: nowrap;
++    margin-bottom: 2px;
++    transform: scale(1);
++    transition: 0.15s all ease;
++    user-select: none;
++    display: flex;
++    align-items: flex-end;
++    padding: 4px;
++  }
++
++  buttontext {
++    overflow: hidden;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++  }
++
++  img {
++    height: 1rem;
++    margin-right: 4px;
++    border-radius: 4px;
++  }
++
++  button:hover {
++    background-color: #ffffff28;;
++  }
++
++  button:active {
++    transform: scale(0.98);
++    background-color: rgba(255, 255, 255, 0.2);
++  }
+\ No newline at end of file
+diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list_item.html.ts b/chrome/browser/resources/side_panel/reading_list/reading_list_item.html.ts
+index a94c369cc7..619478db50 100644
+--- a/chrome/browser/resources/side_panel/reading_list/reading_list_item.html.ts
++++ b/chrome/browser/resources/side_panel/reading_list/reading_list_item.html.ts
+@@ -9,28 +9,45 @@ import type {ReadingListItemElement} from './reading_list_item.js';
+ export function getHtml(this: ReadingListItemElement) {
+   // clang-format off
+   return html`<!--_html_template_start_-->
+-<cr-url-list-item id="crUrlListItem"
+-    title="${this.data.title}"
+-    description="${this.data.displayUrl}"
+-    reverse-elide-description
+-    description-meta="${this.data.displayTimeSinceUpdate}"
+-    url="${this.data.url.url}">
+-  <cr-icon-button slot="suffix" id="updateStatusButton" disable-ripple
+-      aria-label="${this.getUpdateStatusButtonTooltip_(
+-          '$i18n{tooltipMarkAsUnread}', '$i18n{tooltipMarkAsRead}')}"
+-      iron-icon="${this.getUpdateStatusButtonIcon_('cr:check-circle',
+-          'read-later:check-circle-outline')}"
+-      ?noink="${!this.buttonRipples}" no-ripple-on-focus
+-      @click="${this.onUpdateStatusClick_}"
+-      title="${this.getUpdateStatusButtonTooltip_('$i18n{tooltipMarkAsUnread}',
+-          '$i18n{tooltipMarkAsRead}')}">
+-  </cr-icon-button>
+-  <cr-icon-button slot="suffix" id="deleteButton"
+-      aria-label="$i18n{tooltipDelete}"
+-      iron-icon="cr:close" ?noink="${!this.buttonRipples}" no-ripple-on-focus
+-      @click="${this.onItemDeleteClick_}" title="$i18n{tooltipDelete}">
+-  </cr-icon-button>
+-</cr-url-list-item>
++  <button 
++
++  style="${this.data.highlighted ? 'background-color: #ffffff38;' : ''}"
++
++    highlighted="${this.data.highlighted}"
++    @click="${this.onTabHighlight}"
++  >
++    <img src="chrome://favicon/size/32/${this.data.url}" />
++    
++  <buttontext>${this.data.title}</buttontext>
++  </button>
++
++  
++
+ <!--_html_template_end_-->`;
+   // clang-format on
+ }
++
++// scroll-snap-align: start;
++
++// <cr-url-list-item id="crUrlListItem"
++//     title="${this.data.title}"
++//     description="${this.data.displayUrl}"
++//     reverse-elide-description
++//     description-meta="${this.data.displayTimeSinceUpdate}"
++//     url="${this.data.url.url}">
++//   <cr-icon-button slot="suffix" id="updateStatusButton" disable-ripple
++//       aria-label="${this.getUpdateStatusButtonTooltip_(
++//           '$i18n{tooltipMarkAsUnread}', '$i18n{tooltipMarkAsRead}')}"
++//       iron-icon="${this.getUpdateStatusButtonIcon_('cr:check-circle',
++//           'read-later:check-circle-outline')}"
++//       ?noink="${!this.buttonRipples}" no-ripple-on-focus
++//       @click="${this.onUpdateStatusClick_}"
++//       title="${this.getUpdateStatusButtonTooltip_('$i18n{tooltipMarkAsUnread}',
++//           '$i18n{tooltipMarkAsRead}')}">
++//   </cr-icon-button>
++//   <cr-icon-button slot="suffix" id="deleteButton"
++//       aria-label="$i18n{tooltipDelete}"
++//       iron-icon="cr:close" ?noink="${!this.buttonRipples}" no-ripple-on-focus
++//       @click="${this.onItemDeleteClick_}" title="$i18n{tooltipDelete}">
++//   </cr-icon-button>
++// </cr-url-list-item>
+diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list_item.ts b/chrome/browser/resources/side_panel/reading_list/reading_list_item.ts
+index 5e93ea84ee..f6054a4ee9 100644
+--- a/chrome/browser/resources/side_panel/reading_list/reading_list_item.ts
++++ b/chrome/browser/resources/side_panel/reading_list/reading_list_item.ts
+@@ -7,12 +7,13 @@ import 'chrome://resources/cr_elements/cr_icon_button/cr_icon_button.js';
+ import 'chrome://resources/cr_elements/icons_lit.html.js';
+ import './icons.html.js';
+ 
++// import type {Url} from 'chrome://resources/mojo/url/mojom/url.mojom-webui.js';
+ import type {CrUrlListItemElement} from 'chrome://resources/cr_elements/cr_url_list_item/cr_url_list_item.js';
+ import {MouseHoverableMixinLit} from 'chrome://resources/cr_elements/mouse_hoverable_mixin_lit.js';
+-import {assertNotReached} from 'chrome://resources/js/assert.js';
++// import {assertNotReached} from 'chrome://resources/js/assert.js';
+ import {CrLitElement} from 'chrome://resources/lit/v3_0/lit.rollup.js';
+ 
+-import type {ReadLaterEntry} from './reading_list.mojom-webui.js';
++// import type {ReadLaterEntry} from './reading_list.mojom-webui.js';
+ import type {ReadingListApiProxy} from './reading_list_api_proxy.js';
+ import {ReadingListApiProxyImpl} from './reading_list_api_proxy.js';
+ import {getCss} from './reading_list_item.css.js';
+@@ -20,8 +21,8 @@ import {getHtml} from './reading_list_item.html.js';
+ 
+ export const MARKED_AS_READ_UI_EVENT = 'reading-list-marked-as-read';
+ 
+-const navigationKeys: Set<string> =
+-    new Set([' ', 'Enter', 'ArrowRight', 'ArrowLeft']);
++// const navigationKeys: Set<string> =
++//     new Set([' ', 'Enter', 'ArrowRight', 'ArrowLeft']);
+ 
+ export interface ReadingListItemElement {
+   $: {
+@@ -53,13 +54,23 @@ export class ReadingListItemElement extends ReadingListItemElementBase {
+     };
+   }
+ 
+-  data: ReadLaterEntry = {
+-    title: '',
+-    url: {url: ''},
+-    displayUrl: '',
+-    updateTime: 0n,
+-    read: false,
+-    displayTimeSinceUpdate: '',
++  data: chrome.tabs.Tab = {
++    index: -1,
++    groupId: -1,
++    windowId: -1,
++    selected: false,
++    highlighted: false,
++    active: false,
++    pinned: false,
++    discarded: false,
++    autoDiscardable: false,
++    incognito: false,
++    // title: '',
++    // url: {url: ''},
++    // displayUrl: '',
++    // updateTime: 0n,
++    // read: false,
++    // displayTimeSinceUpdate: '',
+   };
+ 
+   buttonRipples: boolean = false;
+@@ -67,111 +78,116 @@ export class ReadingListItemElement extends ReadingListItemElementBase {
+       ReadingListApiProxyImpl.getInstance();
+ 
+   override firstUpdated() {
+-    this.addEventListener('click', this.onClick_);
+-    this.addEventListener('auxclick', this.onAuxClick_.bind(this));
++    // this.addEventListener('click', this.onClick_);
++    // this.addEventListener('auxclick', this.onAuxClick_.bind(this));
+     this.addEventListener('contextmenu', this.onContextMenu_.bind(this));
+-    this.addEventListener('keydown', this.onKeyDown_.bind(this));
+-  }
+-
+-  override focus() {
+-    this.$.crUrlListItem.focus();
+-  }
+-
+-  private onAuxClick_(e: MouseEvent) {
+-    if (e.button !== 1) {
+-      // Not a middle click.
+-      return;
+-    }
+-
+-    this.apiProxy_.openUrl(this.data.url, true, {
+-      middleButton: true,
+-      altKey: e.altKey,
+-      ctrlKey: e.ctrlKey,
+-      metaKey: e.metaKey,
+-      shiftKey: e.shiftKey,
+-    });
+-  }
+-
+-  private onClick_(e: MouseEvent|KeyboardEvent) {
+-    this.apiProxy_.openUrl(this.data.url, true, {
+-      middleButton: false,
+-      altKey: e.altKey,
+-      ctrlKey: e.ctrlKey,
+-      metaKey: e.metaKey,
+-      shiftKey: e.shiftKey,
+-    });
+-  }
++    // this.addEventListener('keydown', this.onKeyDown_.bind(this));
++  }
++
++  // override focus() {
++  //   this.$.crUrlListItem.focus();
++  // }
++
++  // private onAuxClick_(e: MouseEvent) {
++  //   if (e.button !== 1) {
++  //     // Not a middle click.
++  //     return;
++  //   }
++
++  //   this.apiProxy_.openUrl(this.data.url, true, {
++  //     middleButton: true,
++  //     altKey: e.altKey,
++  //     ctrlKey: e.ctrlKey,
++  //     metaKey: e.metaKey,
++  //     shiftKey: e.shiftKey,
++  //   });
++  // }
++
++  // private onClick_(e: MouseEvent|KeyboardEvent) {
++  //   this.apiProxy_.openUrl(this.data.url, true, {
++  //     middleButton: false,
++  //     altKey: e.altKey,
++  //     ctrlKey: e.ctrlKey,
++  //     metaKey: e.metaKey,
++  //     shiftKey: e.shiftKey,
++  //   });
++  // }
+ 
+   private onContextMenu_(e: MouseEvent) {
+-    this.apiProxy_.showContextMenuForUrl(this.data.url, e.clientX, e.clientY);
+-  }
+-
+-  private onKeyDown_(e: KeyboardEvent) {
+-    if (e.shiftKey || !navigationKeys.has(e.key)) {
+-      return;
+-    }
+-
+-    const focusableElements: HTMLElement[] = [
+-      this.$.crUrlListItem,
+-      this.$.updateStatusButton,
+-      this.$.deleteButton,
+-    ];
+-    const focusedIndex = focusableElements.indexOf(
+-        this.shadowRoot!.activeElement as HTMLElement);
+-
+-    switch (e.key) {
+-      case ' ':
+-      case 'Enter':
+-        this.onClick_(e);
+-        break;
+-      case 'ArrowRight': {
+-        const index =
+-            focusedIndex >= focusableElements.length - 1 ? 0 : focusedIndex + 1;
+-        focusableElements[index]!.focus();
+-        break;
+-      }
+-      case 'ArrowLeft': {
+-        const index =
+-            focusedIndex <= 0 ? focusableElements.length - 1 : focusedIndex - 1;
+-        focusableElements[index]!.focus();
+-        break;
+-      }
+-      default:
+-        assertNotReached();
+-    }
+-    e.preventDefault();
++    this.apiProxy_.showContextMenuForUrl({url: this.data.url!}, e.clientX, e.clientY);
++  }
++
++  // private onKeyDown_(e: KeyboardEvent) {
++  //   if (e.shiftKey || !navigationKeys.has(e.key)) {
++  //     return;
++  //   }
++
++  //   const focusableElements: HTMLElement[] = [
++  //     this.$.crUrlListItem,
++  //     this.$.updateStatusButton,
++  //     this.$.deleteButton,
++  //   ];
++  //   const focusedIndex = focusableElements.indexOf(
++  //       this.shadowRoot!.activeElement as HTMLElement);
++
++  //   switch (e.key) {
++  //     case ' ':
++  //     case 'Enter':
++  //       this.onClick_(e);
++  //       break;
++  //     case 'ArrowRight': {
++  //       const index =
++  //           focusedIndex >= focusableElements.length - 1 ? 0 : focusedIndex + 1;
++  //       focusableElements[index]!.focus();
++  //       break;
++  //     }
++  //     case 'ArrowLeft': {
++  //       const index =
++  //           focusedIndex <= 0 ? focusableElements.length - 1 : focusedIndex - 1;
++  //       focusableElements[index]!.focus();
++  //       break;
++  //     }
++  //     default:
++  //       assertNotReached();
++  //   }
++  //   e.preventDefault();
++  //   e.stopPropagation();
++  // }
++
++  // protected onUpdateStatusClick_(e: Event) {
++  //   e.stopPropagation();
++  //   this.apiProxy_.updateReadStatus(this.data.url, !this.data.read);
++  //   if (!this.data.read) {
++  //     this.dispatchEvent(new CustomEvent(
++  //         MARKED_AS_READ_UI_EVENT, {bubbles: true, composed: true}));
++  //   }
++  // }
++
++  protected async onTabHighlight(e: Event) {
+     e.stopPropagation();
++    await chrome.tabs.highlight({tabs: this.data.index!});
+   }
+ 
+-  protected onUpdateStatusClick_(e: Event) {
+-    e.stopPropagation();
+-    this.apiProxy_.updateReadStatus(this.data.url, !this.data.read);
+-    if (!this.data.read) {
+-      this.dispatchEvent(new CustomEvent(
+-          MARKED_AS_READ_UI_EVENT, {bubbles: true, composed: true}));
+-    }
+-  }
+-
+-  protected onItemDeleteClick_(e: Event) {
+-    e.stopPropagation();
+-    this.apiProxy_.removeEntry(this.data.url);
+-  }
++  // protected onItemDeleteClick_(e: Event) {
++  //   e.stopPropagation();
++  //   this.apiProxy_.removeEntry(this.data.url);
++  // }
+ 
+   /**
+    * @return The appropriate icon for the current state
+    */
+-  protected getUpdateStatusButtonIcon_(
+-      markAsUnreadIcon: string, markAsReadIcon: string): string {
+-    return this.data.read ? markAsUnreadIcon : markAsReadIcon;
+-  }
+-
+-  /**
+-   * @return The appropriate tooltip for the current state
+-   */
+-  protected getUpdateStatusButtonTooltip_(
+-      markAsUnreadTooltip: string, markAsReadTooltip: string): string {
+-    return this.data.read ? markAsUnreadTooltip : markAsReadTooltip;
+-  }
++  // protected getUpdateStatusButtonIcon_(
++  //     markAsUnreadIcon: string, markAsReadIcon: string): string {
++  //   return this.data.read ? markAsUnreadIcon : markAsReadIcon;
++  // }
++
++  // /**
++  //  * @return The appropriate tooltip for the current state
++  //  */
++  // protected getUpdateStatusButtonTooltip_(
++  //     markAsUnreadTooltip: string, markAsReadTooltip: string): string {
++  //   return this.data.read ? markAsUnreadTooltip : markAsReadTooltip;
++  // }
+ }
+ 
+ declare global {
+diff --git a/chrome/browser/ui/layout_constants.cc b/chrome/browser/ui/layout_constants.cc
+index a2cafb986d..7b14c1262b 100644
+--- a/chrome/browser/ui/layout_constants.cc
++++ b/chrome/browser/ui/layout_constants.cc
+@@ -85,10 +85,9 @@ int GetLayoutConstant(LayoutConstant constant) {
+     case TAB_CLOSE_BUTTON_SIZE:
+       return touch_ui ? 24 : 16;
+     case TAB_HEIGHT:
+-      return 34 + GetLayoutConstant(TABSTRIP_TOOLBAR_OVERLAP);
++      return 0;
+     case TAB_STRIP_HEIGHT:
+-      return GetLayoutConstant(TAB_HEIGHT) +
+-             GetLayoutConstant(TAB_STRIP_PADDING);
++      return 0;
+     case TAB_STRIP_PADDING:
+       return 6;
+     case TAB_SEPARATOR_HEIGHT:
+diff --git a/chrome/browser/ui/views/apps/app_window_native_widget_mac.mm b/chrome/browser/ui/views/apps/app_window_native_widget_mac.mm
+index fc791e2e40..bee9dfc665 100644
+--- a/chrome/browser/ui/views/apps/app_window_native_widget_mac.mm
++++ b/chrome/browser/ui/views/apps/app_window_native_widget_mac.mm
+@@ -26,13 +26,13 @@
+     remote_cocoa::mojom::CreateWindowParams* params) {
+   // If the window is frameless then use the frameless NSWindow sub-class.
+   // Otherwise use the default window creation parameters.
+-  if (native_app_window_->IsFrameless()) {
+-    params->window_class = remote_cocoa::mojom::WindowClass::kFrameless;
+-    params->style_mask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+-                         NSWindowStyleMaskMiniaturizable |
+-                         NSWindowStyleMaskResizable |
+-                         NSWindowStyleMaskFullSizeContentView;
+-  }
++  // if (native_app_window_->IsFrameless()) {
++  //   params->window_class = remote_cocoa::mojom::WindowClass::kFrameless;
++  //   params->style_mask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
++  //                        NSWindowStyleMaskMiniaturizable |
++  //                        NSWindowStyleMaskResizable |
++  //                        NSWindowStyleMaskFullSizeContentView;
++  // }
+ }
+ 
+ NativeWidgetMacNSWindow* AppWindowNativeWidgetMac::CreateNSWindow(
+@@ -41,13 +41,13 @@
+ 
+   // If the window has a native or colored frame, use the same NSWindow as
+   // NativeWidgetMac.
+-  if (!native_app_window_->IsFrameless() &&
+-      native_app_window_->HasFrameColor()) {
+-    [TitlebarBackgroundView
+-        addToNSWindow:ns_window
+-          activeColor:native_app_window_->ActiveFrameColor()
+-        inactiveColor:native_app_window_->InactiveFrameColor()];
+-  }
++  // if (!native_app_window_->IsFrameless() &&
++  //     native_app_window_->HasFrameColor()) {
++  //   [TitlebarBackgroundView
++  //       addToNSWindow:ns_window
++  //         activeColor:native_app_window_->ActiveFrameColor()
++  //       inactiveColor:native_app_window_->InactiveFrameColor()];
++  // }
+ 
+   return ns_window;
+ }
+diff --git a/chrome/browser/ui/views/bookmarks/bookmark_bar_view.cc b/chrome/browser/ui/views/bookmarks/bookmark_bar_view.cc
+index 838700a210..eb6d2be2cc 100644
+--- a/chrome/browser/ui/views/bookmarks/bookmark_bar_view.cc
++++ b/chrome/browser/ui/views/bookmarks/bookmark_bar_view.cc
+@@ -637,40 +637,40 @@ gfx::Size BookmarkBarView::GetMinimumSize() const {
+   // button, by which one can access all the Bookmark Bar items, and the "All
+   // Bookmarks" folder, along with appropriate margins and button padding.
+   // It should also contain the Managed Bookmarks folder, if it is visible.
+-  int width = GetLeadingMargin();
+-
+-  int height = GetLayoutConstant(BOOKMARK_BAR_HEIGHT);
+-
+-  const int bookmark_bar_button_padding =
+-      GetLayoutConstant(BOOKMARK_BAR_BUTTON_PADDING);
+-
+-  if (managed_bookmarks_button_->GetVisible()) {
+-    gfx::Size size = managed_bookmarks_button_->GetPreferredSize();
+-    width += size.width() + bookmark_bar_button_padding;
+-  }
+-  if (all_bookmarks_button_->GetVisible()) {
+-    gfx::Size size = all_bookmarks_button_->GetPreferredSize();
+-    width += size.width() + bookmark_bar_button_padding;
+-  }
+-  if (overflow_button_->GetVisible()) {
+-    gfx::Size size = overflow_button_->GetPreferredSize();
+-    width += size.width() + bookmark_bar_button_padding;
+-  }
+-  if (bookmarks_separator_view_->GetVisible()) {
+-    gfx::Size size = bookmarks_separator_view_->GetPreferredSize();
+-    width += size.width();
+-  }
+-  if (saved_tab_groups_separator_view_ &&
+-      saved_tab_groups_separator_view_->GetVisible()) {
+-    gfx::Size size = saved_tab_groups_separator_view_->GetPreferredSize();
+-    width += size.width();
+-  }
+-  if (apps_page_shortcut_->GetVisible()) {
+-    gfx::Size size = apps_page_shortcut_->GetPreferredSize();
+-    width += size.width() + bookmark_bar_button_padding;
+-  }
+-
+-  return gfx::Size(width, height);
++  // int width = GetLeadingMargin();
++
++  // int height = GetLayoutConstant(BOOKMARK_BAR_HEIGHT);
++
++  // const int bookmark_bar_button_padding =
++  //     GetLayoutConstant(BOOKMARK_BAR_BUTTON_PADDING);
++
++  // if (managed_bookmarks_button_->GetVisible()) {
++  //   gfx::Size size = managed_bookmarks_button_->GetPreferredSize();
++  //   width += size.width() + bookmark_bar_button_padding;
++  // }
++  // if (all_bookmarks_button_->GetVisible()) {
++  //   gfx::Size size = all_bookmarks_button_->GetPreferredSize();
++  //   width += size.width() + bookmark_bar_button_padding;
++  // }
++  // if (overflow_button_->GetVisible()) {
++  //   gfx::Size size = overflow_button_->GetPreferredSize();
++  //   width += size.width() + bookmark_bar_button_padding;
++  // }
++  // if (bookmarks_separator_view_->GetVisible()) {
++  //   gfx::Size size = bookmarks_separator_view_->GetPreferredSize();
++  //   width += size.width();
++  // }
++  // if (saved_tab_groups_separator_view_ &&
++  //     saved_tab_groups_separator_view_->GetVisible()) {
++  //   gfx::Size size = saved_tab_groups_separator_view_->GetPreferredSize();
++  //   width += size.width();
++  // }
++  // if (apps_page_shortcut_->GetVisible()) {
++  //   gfx::Size size = apps_page_shortcut_->GetPreferredSize();
++  //   width += size.width() + bookmark_bar_button_padding;
++  // }
++
++  return gfx::Size(0, 0);
+ }
+ 
+ // TODO(crbug.com/40648316, crbug.com/330763840): Remove Layout override and
+diff --git a/chrome/browser/ui/views/extensions/extension_popup.cc b/chrome/browser/ui/views/extensions/extension_popup.cc
+index 8c8d41a784..fb8444fa2c 100644
+--- a/chrome/browser/ui/views/extensions/extension_popup.cc
++++ b/chrome/browser/ui/views/extensions/extension_popup.cc
+@@ -254,7 +254,7 @@ ExtensionPopup::ExtensionPopup(
+       deferred_close_weak_ptr_factory_(this) {
+   g_last_popup_for_testing = this;
+   SetButtons(ui::DIALOG_BUTTON_NONE);
+-  set_use_round_corners(false);
++  set_use_round_corners(true);
+ 
+   set_margins(gfx::Insets());
+   SetLayoutManager(std::make_unique<views::FillLayout>());
+diff --git a/chrome/browser/ui/views/frame/browser_frame_mac.mm b/chrome/browser/ui/views/frame/browser_frame_mac.mm
+index 6a54fda117..b62e1206ec 100644
+--- a/chrome/browser/ui/views/frame/browser_frame_mac.mm
++++ b/chrome/browser/ui/views/frame/browser_frame_mac.mm
+@@ -92,6 +92,13 @@ @implementation BrowserWindowTouchBarViewsDelegate {
+ }
+ 
+ - (instancetype)initWithBrowser:(Browser*)browser window:(NSWindow*)window {
++
++  window.movableByWindowBackground = YES;
++
++  [[window standardWindowButton:NSWindowCloseButton] setHidden:YES];
++  [[window standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
++  [[window standardWindowButton:NSWindowZoomButton] setHidden:YES];
++
+   if ((self = [super init])) {
+     _browser = browser;
+     _window = window;
+@@ -349,31 +356,36 @@ - (NSTouchBar*)makeTouchBar {
+ void BrowserFrameMac::PopulateCreateWindowParams(
+     const views::Widget::InitParams& widget_params,
+     remote_cocoa::mojom::CreateWindowParams* params) {
+-  params->style_mask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+-                       NSWindowStyleMaskMiniaturizable |
+-                       NSWindowStyleMaskResizable;
+-
+-  if (browser_view_->GetIsPictureInPictureType()) {
+-    // Picture in Picture windows, even if they are part of a web app, draw
+-    // their own title bar and decorations.  Note that `GetIsWebAppType()` might
+-    // also be true here, so it's important that this check is first.
++  // params->style_mask = NSWindowStyleMaskFullSizeContentView | NSWindowStyleMaskTitled | NSWindowStyleMaskResizable;
++
++  // if (browser_view_->GetIsPictureInPictureType()) {
++  //   // Picture in Picture windows, even if they are part of a web app, draw
++  //   // their own title bar and decorations.  Note that `GetIsWebAppType()` might
++  //   // also be true here, so it's important that this check is first.
++  //   params->window_class = remote_cocoa::mojom::WindowClass::kFrameless;
++  //   params->style_mask = NSWindowStyleMaskFullSizeContentView |
++  //                        NSWindowStyleMaskTitled | NSWindowStyleMaskResizable;
++  // } else if (browser_view_->GetIsNormalType() ||
++  //            browser_view_->GetIsWebAppType()) {
++  //   params->window_class = remote_cocoa::mojom::WindowClass::kBrowser;
++  //   params->style_mask |= NSWindowStyleMaskFullSizeContentView;
++
++  //   // Ensure tabstrip/profile button are visible.
++  //   params->titlebar_appears_transparent = true;
++
++  //   // Hosted apps draw their own window title.
++  //   if (browser_view_->GetIsWebAppType())
++  //     params->window_title_hidden = true;
++  // } else {
++  //   params->window_class = remote_cocoa::mojom::WindowClass::kDefault;
++  // }
++
+     params->window_class = remote_cocoa::mojom::WindowClass::kFrameless;
+     params->style_mask = NSWindowStyleMaskFullSizeContentView |
+                          NSWindowStyleMaskTitled | NSWindowStyleMaskResizable;
+-  } else if (browser_view_->GetIsNormalType() ||
+-             browser_view_->GetIsWebAppType()) {
+-    params->window_class = remote_cocoa::mojom::WindowClass::kBrowser;
+-    params->style_mask |= NSWindowStyleMaskFullSizeContentView;
+ 
+-    // Ensure tabstrip/profile button are visible.
+-    params->titlebar_appears_transparent = true;
+ 
+-    // Hosted apps draw their own window title.
+-    if (browser_view_->GetIsWebAppType())
+-      params->window_title_hidden = true;
+-  } else {
+-    params->window_class = remote_cocoa::mojom::WindowClass::kDefault;
+-  }
++
+   params->animation_enabled = true;
+ }
+ 
+diff --git a/chrome/browser/ui/views/frame/browser_view.cc b/chrome/browser/ui/views/frame/browser_view.cc
+index 3e3b2d4ba5..c19a02ce56 100644
+--- a/chrome/browser/ui/views/frame/browser_view.cc
++++ b/chrome/browser/ui/views/frame/browser_view.cc
+@@ -967,7 +967,10 @@ BrowserView::BrowserView(std::unique_ptr<Browser> browser)
+   left_aligned_side_panel_separator_ =
+       AddChildView(std::make_unique<ContentsSeparator>());
+   side_panel_rounded_corner_ =
+-      AddChildView(std::make_unique<SidePanelRoundedCorner>(this));
++      AddChildView(std::make_unique<SidePanelRoundedCorner>(this, 1));
++
++  side_panel_rounded_corneright_ =
++      AddChildView(std::make_unique<SidePanelRoundedCorner>(this, 2));
+ 
+   // InfoBarContainer needs to be added as a child here for drop-shadow, but
+   // needs to come after toolbar in focus order (see EnsureFocusOrder()).
+@@ -2090,11 +2093,11 @@ void BrowserView::FullscreenStateChanged() {
+   }
+ #endif
+ 
+-#if BUILDFLAG(IS_MAC)
+-  if (AppUsesWindowControlsOverlay()) {
+-    UpdateWindowControlsOverlayEnabled();
+-  }
+-#endif  // BUILDFLAG(IS_MAC)
++// #if BUILDFLAG(IS_MAC)
++//   if (AppUsesWindowControlsOverlay()) {
++//     UpdateWindowControlsOverlayEnabled();
++//   }
++// #endif  // BUILDFLAG(IS_MAC)
+ 
+   browser_->WindowFullscreenStateChanged();
+ 
+@@ -4212,8 +4215,8 @@ void BrowserView::GetAccessiblePanes(std::vector<views::View*>* panes) {
+   }
+ 
+   panes->push_back(toolbar_button_provider_->GetAsAccessiblePaneView());
+-  if (tab_strip_region_view_)
+-    panes->push_back(tab_strip_region_view_);
++  // if (tab_strip_region_view_)
++  //   panes->push_back(tab_strip_region_view_);
+   if (toolbar_ && toolbar_->custom_tab_bar())
+     panes->push_back(toolbar_->custom_tab_bar());
+   if (bookmark_bar_view_.get())
+@@ -4460,7 +4463,7 @@ void BrowserView::AddedToWidget() {
+       tab_strip_region_view_, tabstrip_, toolbar_, infobar_container_,
+       contents_container_, left_aligned_side_panel_separator_,
+       unified_side_panel_, right_aligned_side_panel_separator_,
+-      side_panel_rounded_corner_, immersive_mode_controller_.get(),
++      side_panel_rounded_corner_, side_panel_rounded_corneright_, immersive_mode_controller_.get(),
+       contents_separator_));
+ 
+   EnsureFocusOrder();
+diff --git a/chrome/browser/ui/views/frame/browser_view.h b/chrome/browser/ui/views/frame/browser_view.h
+index 255366bb07..a4d4aac380 100644
+--- a/chrome/browser/ui/views/frame/browser_view.h
++++ b/chrome/browser/ui/views/frame/browser_view.h
+@@ -1248,6 +1248,8 @@ class BrowserView : public BrowserWindow,
+       left_aligned_side_panel_separator_ = nullptr;
+   raw_ptr<views::View, AcrossTasksDanglingUntriaged>
+       side_panel_rounded_corner_ = nullptr;
++    raw_ptr<views::View, AcrossTasksDanglingUntriaged>
++      side_panel_rounded_corneright_ = nullptr;
+ 
+   // Provides access to the toolbar buttons this browser view uses. Buttons may
+   // appear in a hosted app frame or in a tabbed UI toolbar.
+diff --git a/chrome/browser/ui/views/frame/browser_view_layout.cc b/chrome/browser/ui/views/frame/browser_view_layout.cc
+index 96b489221f..ae7cef389b 100644
+--- a/chrome/browser/ui/views/frame/browser_view_layout.cc
++++ b/chrome/browser/ui/views/frame/browser_view_layout.cc
+@@ -163,6 +163,7 @@ BrowserViewLayout::BrowserViewLayout(
+     views::View* unified_side_panel,
+     views::View* right_aligned_side_panel_separator,
+     views::View* side_panel_rounded_corner,
++    views::View* side_panel_rounded_corneright,
+     ImmersiveModeController* immersive_mode_controller,
+     views::View* contents_separator)
+     : delegate_(std::move(delegate)),
+@@ -178,6 +179,7 @@ BrowserViewLayout::BrowserViewLayout(
+       unified_side_panel_(unified_side_panel),
+       right_aligned_side_panel_separator_(right_aligned_side_panel_separator),
+       side_panel_rounded_corner_(side_panel_rounded_corner),
++      side_panel_rounded_corneright_(side_panel_rounded_corneright),
+       immersive_mode_controller_(immersive_mode_controller),
+       contents_separator_(contents_separator),
+       tab_strip_(tab_strip),
+@@ -210,9 +212,9 @@ gfx::Size BrowserViewLayout::GetMinimumSize(const views::View* host) const {
+       delegate_->SupportsWindowFeature(Browser::FEATURE_TOOLBAR);
+   const bool has_location_bar =
+       delegate_->SupportsWindowFeature(Browser::FEATURE_LOCATIONBAR);
+-  const bool has_bookmarks_bar =
+-      bookmark_bar_ && bookmark_bar_->GetVisible() &&
+-      delegate_->SupportsWindowFeature(Browser::FEATURE_BOOKMARKBAR);
++  const bool has_bookmarks_bar = false;
++      // bookmark_bar_ && bookmark_bar_->GetVisible() &&
++      // delegate_->SupportsWindowFeature(Browser::FEATURE_BOOKMARKBAR);
+ 
+   gfx::Size tabstrip_size(
+       has_tabstrip ? tab_strip_region_view_->GetMinimumSize() : gfx::Size());
+@@ -643,7 +645,7 @@ int BrowserViewLayout::LayoutBookmarkBar(int top) {
+   }
+ 
+   bookmark_bar_->SetInfoBarVisible(IsInfobarVisible());
+-  int bookmark_bar_height = bookmark_bar_->GetPreferredSize().height();
++  int bookmark_bar_height = 0;
+   bookmark_bar_->SetBounds(vertical_layout_rect_.x(), top,
+                            vertical_layout_rect_.width(), bookmark_bar_height);
+   // Set visibility after setting bounds, as the visibility update uses the
+@@ -699,7 +701,9 @@ void BrowserViewLayout::LayoutSidePanelView(
+     gfx::Rect& contents_container_bounds) {
+   const bool side_panel_visible = side_panel && side_panel->GetVisible();
+   // Update side panel rounded corner visibility to match side panel visibility.
+-  SetViewVisibility(side_panel_rounded_corner_, side_panel_visible);
++  SetViewVisibility(side_panel_rounded_corner_, true);
++  SetViewVisibility(side_panel_rounded_corneright_, true);
++
+ 
+   if (left_aligned_side_panel_separator_) {
+     const bool side_panel_visible_on_left =
+@@ -796,18 +800,28 @@ void BrowserViewLayout::LayoutSidePanelView(
+   const float corner_radius =
+       side_panel_rounded_corner_->GetLayoutProvider()->GetCornerRadiusMetric(
+           views::ShapeContextTokens::kSidePanelPageContentRadius);
+-  if (is_container_after_side_panel) {
++  if (is_container_after_side_panel) { // left side panel
+     side_panel_rounded_corner_->SetBounds(
+         side_panel_bounds.right(),
+         side_panel_bounds.y() - views::Separator::kThickness,
+         corner_radius + views::Separator::kThickness,
+         corner_radius + views::Separator::kThickness);
++    side_panel_rounded_corneright_->SetBounds( // right side panel
++        contents_container_bounds.right() - corner_radius,
++        side_panel_bounds.y() - views::Separator::kThickness,
++        corner_radius + views::Separator::kThickness,
++        corner_radius + views::Separator::kThickness);
++    // side_panel_rounded_corneright_->SetPos(1);
++    
+   } else {
+-    side_panel_rounded_corner_->SetBounds(
++    side_panel_rounded_corner_->SetBounds( // right side panel
+         side_panel_bounds.x() - corner_radius - views::Separator::kThickness,
+         side_panel_bounds.y() - views::Separator::kThickness,
+         corner_radius + views::Separator::kThickness,
+         corner_radius + views::Separator::kThickness);
++
++
++ 
+   }
+ }
+ 
+diff --git a/chrome/browser/ui/views/frame/browser_view_layout.h b/chrome/browser/ui/views/frame/browser_view_layout.h
+index 9caffaed0f..240b674587 100644
+--- a/chrome/browser/ui/views/frame/browser_view_layout.h
++++ b/chrome/browser/ui/views/frame/browser_view_layout.h
+@@ -65,6 +65,7 @@ class BrowserViewLayout : public views::LayoutManager {
+                     views::View* unified_side_panel,
+                     views::View* right_aligned_side_panel_separator,
+                     views::View* side_panel_rounded_corner,
++                    views::View* side_panel_rounded_corneright,
+                     ImmersiveModeController* immersive_mode_controller,
+                     views::View* contents_separator);
+ 
+@@ -196,6 +197,8 @@ class BrowserViewLayout : public views::LayoutManager {
+       right_aligned_side_panel_separator_;
+   const raw_ptr<views::View, AcrossTasksDanglingUntriaged>
+       side_panel_rounded_corner_;
++  const raw_ptr<views::View, AcrossTasksDanglingUntriaged>
++      side_panel_rounded_corneright_;
+   const raw_ptr<ImmersiveModeController, AcrossTasksDanglingUntriaged>
+       immersive_mode_controller_;
+   const raw_ptr<views::View, AcrossTasksDanglingUntriaged> contents_separator_;
+diff --git a/chrome/browser/ui/views/frame/picture_in_picture_browser_frame_view.cc b/chrome/browser/ui/views/frame/picture_in_picture_browser_frame_view.cc
+index 9858a9660c..20d08437f5 100644
+--- a/chrome/browser/ui/views/frame/picture_in_picture_browser_frame_view.cc
++++ b/chrome/browser/ui/views/frame/picture_in_picture_browser_frame_view.cc
+@@ -98,7 +98,7 @@ constexpr int kFrameBorderThickness = 4;
+ #if !BUILDFLAG(IS_CHROMEOS_ASH)
+ constexpr int kResizeBorder = 10;
+ #endif
+-constexpr int kResizeAreaCornerSize = 16;
++constexpr int kResizeAreaCornerSize = 48;
+ 
+ // The time duration that the top bar animation will take in total.
+ constexpr base::TimeDelta kAnimationDuration = base::Milliseconds(250);
+diff --git a/chrome/browser/ui/views/location_bar/location_bar_view.cc b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+index 714c749d0b..32569005ff 100644
+--- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
++++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+@@ -440,15 +440,17 @@ std::unique_ptr<views::Background> LocationBarView::CreateRoundRectBackground(
+     bool should_border_scale) const {
+   const int radius = GetBorderRadius();
+   auto painter =
+-      stroke_color == SK_ColorTRANSPARENT
+-          ? views::Painter::CreateSolidRoundRectPainter(
++      // stroke_color == SK_ColorTRANSPARENT
++      //     ? 
++          views::Painter::CreateSolidRoundRectPainter(
+                 background_color, radius, gfx::Insets(), blend_mode, antialias)
+-          : views::Painter::CreateRoundRectWith1PxBorderPainter(
+-                background_color, stroke_color, radius, blend_mode, antialias,
+-                should_border_scale);
++          // : views::Painter::CreateRoundRectWith1PxBorderPainter(
++          //       background_color, stroke_color, radius, blend_mode, antialias,
++          //       should_border_scale)
++          ;
+   std::unique_ptr<views::Background> background =
+       CreateBackgroundFromPainter(std::move(painter));
+-  background->SetNativeControlColor(background_color);
++  // background->SetNativeControlColor(background_color);
+   return background;
+ }
+ 
+@@ -1125,18 +1127,20 @@ void LocationBarView::RefreshBackground() {
+ 
+   SkColor background_color =
+       gfx::Tween::ColorValueBetween(opacity, normal, hovered);
+-  if (is_caret_visible) {
+-    // Match the background color to the popup if the Omnibox is visibly
+-    // focused.
+-    background_color = color_provider->GetColor(kColorOmniboxResultsBackground);
+-  } else if (input_in_progress && !high_contrast) {
+-    // Under CR23 guidelines, if the Omnibox is unfocused, but still contains
+-    // in-progress user input, the background color matches the popup (unless
+-    // high-contrast mode is enabled).
+-    normal = color_provider->GetColor(kColorOmniboxResultsBackground);
+-    hovered = color_provider->GetColor(kColorOmniboxResultsBackgroundHovered);
+-    background_color = gfx::Tween::ColorValueBetween(opacity, normal, hovered);
+-  }
++  // if (is_caret_visible) {
++  //   // Match the background color to the popup if the Omnibox is visibly
++  //   // focused.
++    
++  // } else if (input_in_progress && !high_contrast) {
++  //   // Under CR23 guidelines, if the Omnibox is unfocused, but still contains
++  //   // in-progress user input, the background color matches the popup (unless
++  //   // high-contrast mode is enabled).
++  //   normal = color_provider->GetColor(kColorOmniboxResultsBackground);
++  //   hovered = color_provider->GetColor(kColorOmniboxResultsBackgroundHovered);
++  //   background_color = gfx::Tween::ColorValueBetween(opacity, normal, hovered);
++  // }
++
++  background_color = color_provider->GetColor(kColorOmniboxResultsBackground);
+ 
+   SkColor border_color = SK_ColorTRANSPARENT;
+   if (high_contrast) {
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc b/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
+index e00a27df37..c7c8d1e38b 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_popup_view_views.cc
+@@ -535,12 +535,21 @@ gfx::Rect OmniboxPopupViewViews::GetTargetBounds() const {
+   // Add enough space on the top and bottom so it looks like there is the same
+   // amount of space between the text and the popup border as there is in the
+   // interior between each row of text.
+-  popup_height += RoundedOmniboxResultsFrame::GetNonResultSectionHeight();
++  // popup_height += RoundedOmniboxResultsFrame::GetNonResultSectionHeight();
++  popup_height += 8;
++
+ 
+   // The rounded popup is always offset the same amount from the omnibox.
+   gfx::Rect content_rect = location_bar_view_->GetBoundsInScreen();
+   content_rect.Inset(
+       -RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets());
++
++  // add 40px offset to the top
++  content_rect.set_y(content_rect.y() + 260);
++  content_rect.set_x(content_rect.x() + 260);
++  content_rect.set_width(800);
++
++  
+   content_rect.set_height(popup_height);
+ 
+   // Finally, expand the widget to accommodate the custom-drawn shadows.
+diff --git a/chrome/browser/ui/views/omnibox/omnibox_result_view.cc b/chrome/browser/ui/views/omnibox/omnibox_result_view.cc
+index 60e57ce6fc..be343f116c 100644
+--- a/chrome/browser/ui/views/omnibox/omnibox_result_view.cc
++++ b/chrome/browser/ui/views/omnibox/omnibox_result_view.cc
+@@ -110,23 +110,23 @@ class OmniboxResultSelectionIndicator : public views::View {
+   METADATA_HEADER(OmniboxResultSelectionIndicator, views::View)
+ 
+  public:
+-  const int kStrokeThickness = 4;
++  const int kStrokeThickness = 0;
+ 
+   explicit OmniboxResultSelectionIndicator(OmniboxResultView* result_view)
+       : result_view_(result_view) {
+-    SetPreferredSize(gfx::Size(kStrokeThickness, 40));
++    SetPreferredSize(gfx::Size(0, 0));
+   }
+ 
+-  // views::View:
+-  void OnPaint(gfx::Canvas* canvas) override {
+-    SkPath path = GetPath();
+-    cc::PaintFlags flags;
+-    flags.setAntiAlias(true);
+-    flags.setColor(
+-        GetColorProvider()->GetColor(kColorOmniboxResultsFocusIndicator));
+-    flags.setStyle(cc::PaintFlags::kFill_Style);
+-    canvas->DrawPath(path, flags);
+-  }
++  // // views::View:
++  // void OnPaint(gfx::Canvas* canvas) override {
++  //   SkPath path = GetPath();
++  //   cc::PaintFlags flags;
++  //   flags.setAntiAlias(true);
++  //   flags.setColor(
++  //       GetColorProvider()->GetColor(kColorOmniboxResultsFocusIndicator));
++  //   flags.setStyle(cc::PaintFlags::kFill_Style);
++  //   canvas->DrawPath(path, flags);
++  // }
+ 
+  private:
+   // Pointer to the parent view.
+@@ -171,14 +171,18 @@ OmniboxResultView::OmniboxResultView(OmniboxPopupViewViews* popup_view,
+ 
+     auto* selection_indicator_container_ =
+         AddChildView(std::make_unique<views::View>());
+-    selection_indicator_container_->SetLayoutManager(
+-        std::make_unique<views::FlexLayout>());
++    // selection_indicator_container_->SetLayoutManager(
++    //     std::make_unique<views::FlexLayout>());
+ 
+     selection_indicator_ = selection_indicator_container_->AddChildView(
+         std::make_unique<OmniboxResultSelectionIndicator>(this));
+     selection_indicator_->SetProperty(views::kCrossAxisAlignmentKey,
+                                       views::LayoutAlignment::kStart);
+ 
++    // selection indicator is hidden by default
++    selection_indicator_container_->SetVisible(false);
++    selection_indicator_->SetVisible(false);
++
+     auto* right = AddChildView(std::make_unique<views::View>());
+     right->SetLayoutManager(std::make_unique<views::FlexLayout>())
+         ->SetCrossAxisAlignment(views::LayoutAlignment::kCenter);
+@@ -386,6 +390,8 @@ void OmniboxResultView::ApplyThemeAndRefreshIcons(bool force_reapply_styles) {
+                                      popup_view_->GetSelection().state ==
+                                          OmniboxPopupSelection::NORMAL);
+   }
++
++  selection_indicator_->SetVisible(false);
+ }
+ 
+ void OmniboxResultView::OnSelectionStateChanged() {
+diff --git a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
+index 4bc8f9177f..59cd4a77b9 100644
+--- a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
++++ b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
+@@ -36,7 +36,7 @@
+ namespace {
+ 
+ // Value from the spec controlling appearance of the shadow.
+-constexpr int kElevation = 16;
++constexpr int kElevation = 0;
+ 
+ #if !defined(USE_AURA)
+ 
+@@ -211,7 +211,7 @@ END_METADATA
+ // Insets used to position |contents_| within |contents_host_|.
+ gfx::Insets GetContentInsets() {
+   return gfx::Insets::TLBR(
+-      RoundedOmniboxResultsFrame::GetNonResultSectionHeight(), 0, 0, 0);
++      10, 0, 0, 0);
+ }
+ 
+ }  // namespace
+@@ -222,29 +222,32 @@ RoundedOmniboxResultsFrame::RoundedOmniboxResultsFrame(
+     : contents_(contents) {
+   // Host the contents in its own View to simplify layout and customization.
+   contents_host_ = new views::View();
+-  contents_host_->SetBackground(
+-      views::CreateThemedSolidBackground(kColorOmniboxResultsBackground));
++  // contents_host_->SetBackground(
++  //     views::CreateThemedSolidBackground(kColorOmniboxResultsBackground));
++  // HARD PART IS TO BLUR IT ON A NATIVE LEVEL.
++  // SOMEHOW PUT A WEBVIEW HERE, THAT IS ALSO TRANSPARENT
+   contents_host_->SetPaintToLayer();
+   contents_host_->layer()->SetFillsBoundsOpaquely(false);
+ 
+   // Use rounded corners.
+-  int corner_radius = views::LayoutProvider::Get()->GetCornerRadiusMetric(
+-      views::ShapeContextTokens::kOmniboxExpandedRadius);
+-  contents_host_->layer()->SetRoundedCornerRadius(
+-      gfx::RoundedCornersF(corner_radius));
+-  contents_host_->layer()->SetIsFastRoundedCorner(true);
++  // int corner_radius = views::LayoutProvider::Get()->GetCornerRadiusMetric(
++  //     views::ShapeContextTokens::kOmniboxExpandedRadius);
++  // contents_host_->layer()->SetRoundedCornerRadius(
++  //     gfx::RoundedCornersF(corner_radius));
++  // contents_host_->layer()->SetIsFastRoundedCorner(true);
+ 
+   top_background_ = new TopBackgroundView(location_bar);
+-  contents_host_->AddChildView(top_background_.get());
++  // contents_host_->AddChildView(top_background_.get());
+   contents_host_->AddChildView(contents_.get());
+-
+-  // Initialize the shadow.
+-  auto border = std::make_unique<views::BubbleBorder>(
+-      views::BubbleBorder::Arrow::NONE,
+-      views::BubbleBorder::Shadow::STANDARD_SHADOW);
+-  border->SetCornerRadius(corner_radius);
+-  border->set_md_shadow_elevation(kElevation);
+-  SetBorder(std::move(border));
++  top_background_->SetVisible(false);
++
++  // // Initialize the shadow.
++  // auto border = std::make_unique<views::BubbleBorder>(
++  //     views::BubbleBorder::Arrow::NONE,
++  //     views::BubbleBorder::Shadow::STANDARD_SHADOW);
++  // border->SetCornerRadius(corner_radius);
++  // border->set_md_shadow_elevation(kElevation);
++  // SetBorder(std::move(border));
+ 
+   AddChildView(contents_host_.get());
+ }
+diff --git a/chrome/browser/ui/views/overlay/back_to_tab_label_button.cc b/chrome/browser/ui/views/overlay/back_to_tab_label_button.cc
+index 1471fdc3ca..cc8b659764 100644
+--- a/chrome/browser/ui/views/overlay/back_to_tab_label_button.cc
++++ b/chrome/browser/ui/views/overlay/back_to_tab_label_button.cc
+@@ -18,7 +18,7 @@
+ 
+ namespace {
+ 
+-constexpr int kBackToTabButtonMargin = 48;
++constexpr int kBackToTabButtonMargin = 84;
+ 
+ constexpr int kBackToTabButtonSize = 20;
+ 
+diff --git a/chrome/browser/ui/views/overlay/video_overlay_window_views.cc b/chrome/browser/ui/views/overlay/video_overlay_window_views.cc
+index c67f93efc4..dbdd760fc6 100644
+--- a/chrome/browser/ui/views/overlay/video_overlay_window_views.cc
++++ b/chrome/browser/ui/views/overlay/video_overlay_window_views.cc
+@@ -298,6 +298,7 @@ std::unique_ptr<VideoOverlayWindowViews> VideoOverlayWindowViews::Create(
+   params.z_order = ui::ZOrderLevel::kFloatingWindow;
+   params.visible_on_all_workspaces = true;
+   params.remove_standard_frame = true;
++  // params.titlebar_appears_transparent = true;
+   params.name = "PictureInPictureWindow";
+   params.layer_type = ui::LAYER_NOT_DRAWN;
+   params.delegate = new OverlayWindowWidgetDelegate();
+diff --git a/chrome/browser/ui/views/side_panel/side_panel.cc b/chrome/browser/ui/views/side_panel/side_panel.cc
+index 179f201d6d..7dc0ec61f0 100644
+--- a/chrome/browser/ui/views/side_panel/side_panel.cc
++++ b/chrome/browser/ui/views/side_panel/side_panel.cc
+@@ -44,6 +44,7 @@
+ #include "ui/views/layout/layout_provider.h"
+ #include "ui/views/view_class_properties.h"
+ #include "ui/views/view_observer.h"
++#include "chrome/browser/ui/views/side_panel/side_panel_entry.h"
+ 
+ namespace {
+ 
+@@ -144,16 +145,16 @@ class SidePanelBorder : public views::Border {
+     }
+ 
+     // Paint the inner border around SidePanel content.
+-    const float stroke_thickness = views::Separator::kThickness * dsf;
++    // const float stroke_thickness = views::Separator::kThickness * dsf;
+ 
+-    cc::PaintFlags flags;
+-    flags.setStrokeWidth(stroke_thickness);
+-    flags.setColor(
+-        view.GetColorProvider()->GetColor(kColorSidePanelContentAreaSeparator));
+-    flags.setStyle(cc::PaintFlags::kStroke_Style);
+-    flags.setAntiAlias(true);
++    // cc::PaintFlags flags;
++    // flags.setStrokeWidth(stroke_thickness);
++    // flags.setColor(
++    //     view.GetColorProvider()->GetColor(kColorSidePanelContentAreaSeparator));
++    // flags.setStyle(cc::PaintFlags::kStroke_Style);
++    // flags.setAntiAlias(true);
+ 
+-    canvas->sk_canvas()->drawRRect(rect, flags);
++    // canvas->sk_canvas()->drawRRect(rect, flags);
+   }
+ 
+   gfx::Insets GetInsets() const override {
+@@ -163,7 +164,8 @@ class SidePanelBorder : public views::Border {
+     // there is a header we want to increase the top inset to give room for the
+     // header to paint on top of the border area.
+     int top_inset =
+-        views::Separator::kThickness + header_height_ - GetBorderThickness();
++        // views::Separator::kThickness + header_height_ - GetBorderThickness();
++        views::Separator::kThickness - 20;
+     return GetBorderInsets() + gfx::Insets::TLBR(top_inset, 0, 0, 0);
+   }
+   gfx::Size GetMinimumSize() const override {
+@@ -289,6 +291,9 @@ SidePanel::SidePanel(BrowserView* browser_view,
+ 
+   pref_change_registrar_.Init(browser_view->GetProfile()->GetPrefs());
+ 
++  // Open chrome://read-later.top-chrome/ in the side panel
++  // browser_view
++
+   // base::Unretained is safe since the side panel must be attached to some
+   // BrowserView. Deleting BrowserView will also delete the SidePanel.
+   pref_change_registrar_.Add(
+@@ -343,7 +348,7 @@ bool SidePanel::IsRightAligned() {
+ }
+ 
+ gfx::Size SidePanel::GetMinimumSize() const {
+-  const int min_side_panel_contents_width = 360;
++  const int min_side_panel_contents_width = 120;
+   const int min_height = 0;
+   return gfx::Size(min_side_panel_contents_width + GetBorderInsets().width(),
+                    min_height);
+@@ -577,6 +582,15 @@ void SidePanel::UpdateVisibility() {
+     animation_.Reset(should_be_open ? 1 : 0);
+     SetVisible(should_be_open);
+   }
++
++  // auto* content_wrapper = browser_view_->unified_side_panel()->GetViewByID(
++  //     kSidePanelContentWrapperViewId);
++
++  // // SidePanelEntry* entry = SidePanelEntry::Key(SidePanelEntry::Id::kReadingList);
++
++  // auto* content = content_wrapper->AddChildView(entry->GetContent());
++
++
+ }
+ 
+ bool SidePanel::ShouldShowAnimation() const {
+diff --git a/chrome/browser/ui/views/side_panel/side_panel_coordinator.cc b/chrome/browser/ui/views/side_panel/side_panel_coordinator.cc
+index 27f2319c7b..d568c6cc20 100644
+--- a/chrome/browser/ui/views/side_panel/side_panel_coordinator.cc
++++ b/chrome/browser/ui/views/side_panel/side_panel_coordinator.cc
+@@ -790,6 +790,8 @@ std::unique_ptr<views::View> SidePanelCoordinator::CreateHeader() {
+           ChromeDistanceMetric::DISTANCE_SIDE_PANEL_HEADER_VECTOR_ICON_SIZE)));
+   header_close_button->SetFocusBehavior(views::View::FocusBehavior::ALWAYS);
+ 
++  header_close_button->SetVisible(false);
++
+   return header;
+ }
+ 
+@@ -1089,9 +1091,9 @@ void SidePanelCoordinator::UpdateHeaderPinButtonState() {
+   }
+ 
+   header_pin_button_->SetToggled(current_pinned_state);
+-  header_pin_button_->SetVisible(
+-      !profile->IsIncognitoProfile() && !profile->IsGuestSession() &&
+-      action_item->GetProperty(actions::kActionItemPinnableKey));
++  // header_pin_button_->SetVisible(
++  //     !profile->IsIncognitoProfile() && !profile->IsGuestSession() &&
++  //     action_item->GetProperty(actions::kActionItemPinnableKey));
+ 
+   if (!current_pinned_state) {
+     // Show IPH for side panel pinning icon.
+@@ -1123,8 +1125,8 @@ void SidePanelCoordinator::UpdatePanelIconAndTitle(
+     }
+     panel_icon_->SetImage(updated_icon);
+   }
+-  panel_icon_->SetVisible(is_extension);
+-  panel_title_->SetText(should_show_title_text ? text : std::u16string());
++  // panel_icon_->SetVisible(is_extension);
++  panel_title_->SetText(std::u16string());
+ }
+ 
+ void SidePanelCoordinator::OnViewVisibilityChanged(views::View* observed_view,
+diff --git a/chrome/browser/ui/views/side_panel/side_panel_header.cc b/chrome/browser/ui/views/side_panel/side_panel_header.cc
+index 7d8dba6a70..39d7187d5b 100644
+--- a/chrome/browser/ui/views/side_panel/side_panel_header.cc
++++ b/chrome/browser/ui/views/side_panel/side_panel_header.cc
+@@ -19,8 +19,11 @@ void SidePanelHeader::Layout(PassKey) {
+   gfx::Rect contents_bounds = parent()->GetContentsBounds();
+ 
+   gfx::Rect header_bounds = gfx::Rect(
+-      contents_bounds.x(), contents_bounds.y() - GetPreferredSize().height(),
+-      contents_bounds.width(), GetPreferredSize().height());
++      // contents_bounds.x(), contents_bounds.y() - GetPreferredSize().height(),
++      // contents_bounds.width(), GetPreferredSize().height());
++
++       contents_bounds.x(), contents_bounds.y(),
++       contents_bounds.width(), 0);
+ 
+   SetBoundsRect(header_bounds);
+ }
+diff --git a/chrome/browser/ui/views/side_panel/side_panel_rounded_corner.cc b/chrome/browser/ui/views/side_panel/side_panel_rounded_corner.cc
+index eeef874e92..4df0da4aeb 100644
+--- a/chrome/browser/ui/views/side_panel/side_panel_rounded_corner.cc
++++ b/chrome/browser/ui/views/side_panel/side_panel_rounded_corner.cc
+@@ -13,22 +13,25 @@
+ #include "ui/base/ui_base_features.h"
+ #include "ui/gfx/canvas.h"
+ 
+-SidePanelRoundedCorner::SidePanelRoundedCorner(BrowserView* browser_view)
+-    : browser_view_(browser_view) {
++SidePanelRoundedCorner::SidePanelRoundedCorner(BrowserView* browser_view, int pos)
++    : browser_view_(browser_view), pos(pos) {
+   SetBackground(std::make_unique<TopContainerBackground>(browser_view_));
+   SetPaintToLayer();
+ }
+ 
+ void SidePanelRoundedCorner::Layout(PassKey) {
++
++  // LOG(INFO) << "thispos: " << pos << std::endl;
++
+   LayoutSuperclass<views::View>(this);
+   SkPath path;
+   if (browser_view_->unified_side_panel()) {
+-    bool is_right_aligned =
+-        browser_view_->unified_side_panel()->IsRightAligned();
++    // bool is_right_aligned =
++    //     browser_view_->unified_side_panel()->IsRightAligned();
+     const float corner_radius = GetLayoutProvider()->GetCornerRadiusMetric(
+         views::ShapeContextTokens::kSidePanelPageContentRadius);
+     const gfx::Rect local_bounds = GetLocalBounds();
+-    if (is_right_aligned) {
++    if (pos == 2) {
+       path.moveTo(0, 0);
+       path.lineTo(local_bounds.width(), 0);
+       path.lineTo(local_bounds.width(), local_bounds.height());
+@@ -61,12 +64,12 @@ void SidePanelRoundedCorner::OnPaint(gfx::Canvas* canvas) {
+   flags.setStyle(cc::PaintFlags::kStroke_Style);
+   flags.setAntiAlias(true);
+ 
+-  bool is_right_aligned = browser_view_->unified_side_panel()->IsRightAligned();
++  // bool is_right_aligned = browser_view_->unified_side_panel()->IsRightAligned();
+   const float corner_radius = GetLayoutProvider()->GetCornerRadiusMetric(
+       views::ShapeContextTokens::kSidePanelPageContentRadius);
+   const gfx::Rect local_bounds = GetLocalBounds();
+   SkPath path;
+-  if (is_right_aligned) {
++  if (pos == 2) {
+     path.moveTo(local_bounds.width() - views::Separator::kThickness,
+                 local_bounds.height());
+     path.arcTo(corner_radius, corner_radius, 0, SkPath::kSmall_ArcSize,
+diff --git a/chrome/browser/ui/views/side_panel/side_panel_rounded_corner.h b/chrome/browser/ui/views/side_panel/side_panel_rounded_corner.h
+index 633f000ead..305d5b8eee 100644
+--- a/chrome/browser/ui/views/side_panel/side_panel_rounded_corner.h
++++ b/chrome/browser/ui/views/side_panel/side_panel_rounded_corner.h
+@@ -20,7 +20,10 @@ class SidePanelRoundedCorner : public views::View {
+   METADATA_HEADER(SidePanelRoundedCorner, views::View)
+ 
+  public:
+-  explicit SidePanelRoundedCorner(BrowserView* browser_view);
++  explicit SidePanelRoundedCorner(BrowserView* browser_view, int pos);
++  // bool SetPos(int x){
++  //   Pos = x;
++  // }
+ 
+  private:
+   void Layout(PassKey) override;
+@@ -28,6 +31,7 @@ class SidePanelRoundedCorner : public views::View {
+   void OnThemeChanged() override;
+ 
+   const raw_ptr<BrowserView> browser_view_;
++  int pos;
+ };
+ 
+ #endif  // CHROME_BROWSER_UI_VIEWS_SIDE_PANEL_SIDE_PANEL_ROUNDED_CORNER_H_
+diff --git a/chrome/browser/ui/views/tabs/tab_organization_button.cc b/chrome/browser/ui/views/tabs/tab_organization_button.cc
+index aa2510ebf8..ee1a92eee3 100644
+--- a/chrome/browser/ui/views/tabs/tab_organization_button.cc
++++ b/chrome/browser/ui/views/tabs/tab_organization_button.cc
+@@ -21,7 +21,7 @@
+ #include "ui/views/view_class_properties.h"
+ 
+ namespace {
+-constexpr int kTabOrganizeCornerRadius = 10;
++constexpr int kTabOrganizeCornerRadius = 20;
+ constexpr int kTabOrganizeFlatCornerRadius = 4;
+ constexpr int kTabOrganizeLabelMargin = 10;
+ constexpr int kTabOrganizeCloseButtonMargin = 8;
+diff --git a/chrome/browser/ui/views/tabs/tab_search_button.cc b/chrome/browser/ui/views/tabs/tab_search_button.cc
+index a42855ead9..e3bda79b1a 100644
+--- a/chrome/browser/ui/views/tabs/tab_search_button.cc
++++ b/chrome/browser/ui/views/tabs/tab_search_button.cc
+@@ -21,7 +21,7 @@
+ #include "ui/views/view_class_properties.h"
+ 
+ namespace {
+-constexpr int kCRTabSearchCornerRadius = 10;
++constexpr int kCRTabSearchCornerRadius = 25;
+ constexpr int kCRTabSearchFlatCornerRadius = 4;
+ }  // namespace
+ 
+diff --git a/chrome/browser/ui/webui/bookmarks/bookmarks_ui.cc b/chrome/browser/ui/webui/bookmarks/bookmarks_ui.cc
+index e19fe5feb9..29f8e9ffe9 100644
+--- a/chrome/browser/ui/webui/bookmarks/bookmarks_ui.cc
++++ b/chrome/browser/ui/webui/bookmarks/bookmarks_ui.cc
+@@ -46,6 +46,9 @@ void AddLocalizedString(content::WebUIDataSource* source,
+ content::WebUIDataSource* CreateAndAddBookmarksUIHTMLSource(Profile* profile) {
+   content::WebUIDataSource* source = content::WebUIDataSource::CreateAndAdd(
+       profile, chrome::kChromeUIBookmarksHost);
++
++  // LOG(INFO) << "kBookmarksResources: " << kBookmarksResources;
++
+   webui::SetupWebUIDataSource(
+       source, base::make_span(kBookmarksResources, kBookmarksResourcesSize),
+       IDR_BOOKMARKS_BOOKMARKS_HTML);
+diff --git a/chrome/browser/ui/webui/new_tab_page/new_tab_page_ui.cc b/chrome/browser/ui/webui/new_tab_page/new_tab_page_ui.cc
+index a049bdb344..f0f02b5d73 100644
+--- a/chrome/browser/ui/webui/new_tab_page/new_tab_page_ui.cc
++++ b/chrome/browser/ui/webui/new_tab_page/new_tab_page_ui.cc
+@@ -788,6 +788,8 @@ NewTabPageUI::NewTabPageUI(content::WebUI* web_ui)
+       tab_->GetTabFeatures()->customize_chrome_side_panel_controller();
+   customize_chrome_side_panel_coordinator->CreateAndRegisterEntry();
+ 
++    // customize_chrome_side_panel_coordinator
++
+   // Populates the load time data with basic info.
+   OnColorProviderChanged();
+   OnCustomBackgroundImageUpdated();
+diff --git a/chrome/browser/ui/webui/side_panel/reading_list/reading_list_page_handler.cc b/chrome/browser/ui/webui/side_panel/reading_list/reading_list_page_handler.cc
+index 5039b2d627..367e3e70d6 100644
+--- a/chrome/browser/ui/webui/side_panel/reading_list/reading_list_page_handler.cc
++++ b/chrome/browser/ui/webui/side_panel/reading_list/reading_list_page_handler.cc
+@@ -72,20 +72,20 @@ class ReadLaterItemContextMenu : public ui::SimpleMenuModel,
+     // in the side panel.
+     AddItemWithStringId(IDC_CONTENT_CONTEXT_OPENLINKNEWTAB,
+                         IDS_BOOKMARK_BAR_OPEN_IN_NEW_TAB);
+-    AddItemWithStringId(IDC_CONTENT_CONTEXT_OPENLINKNEWWINDOW,
+-                        IDS_BOOKMARK_BAR_OPEN_IN_NEW_WINDOW);
++    // AddItemWithStringId(IDC_CONTENT_CONTEXT_OPENLINKNEWWINDOW,
++    //                     IDS_BOOKMARK_BAR_OPEN_IN_NEW_WINDOW);
++    AddSeparator(ui::PADDED_SEPARATOR);
+     AddItemWithStringId(IDC_CONTENT_CONTEXT_OPENLINKOFFTHERECORD,
+                         IDS_BOOKMARK_BAR_OPEN_INCOGNITO);
+-    AddSeparator(ui::NORMAL_SEPARATOR);
+ 
+-    if (reading_list_model->GetEntryByURL(url)->IsRead()) {
+-      AddItemWithStringId(kMarkAsUnread,
+-                          IDS_READ_LATER_CONTEXT_MENU_MARK_AS_UNREAD);
+-    } else {
+-      AddItemWithStringId(kMarkAsRead,
+-                          IDS_READ_LATER_CONTEXT_MENU_MARK_AS_READ);
+-    }
+-    AddItemWithStringId(kDelete, IDS_READ_LATER_CONTEXT_MENU_DELETE);
++    // if (reading_list_model->GetEntryByURL(url)->IsRead()) {
++    //   AddItemWithStringId(kMarkAsUnread,
++    //                       IDS_READ_LATER_CONTEXT_MENU_MARK_AS_UNREAD);
++    // } else {
++    //   AddItemWithStringId(kMarkAsRead,
++    //                       IDS_READ_LATER_CONTEXT_MENU_MARK_AS_READ);
++    // }
++    // AddItemWithStringId(kDelete, IDS_READ_LATER_CONTEXT_MENU_DELETE);
+   }
+   ~ReadLaterItemContextMenu() override = default;
+ 
+@@ -249,8 +249,11 @@ void ReadingListPageHandler::RemoveEntry(const GURL& url) {
+ void ReadingListPageHandler::ShowContextMenuForURL(const GURL& url,
+                                                    int32_t x,
+                                                    int32_t y) {
++  // LOG(ERROR) << "ShowContextMenuForURL: " << url;
+   auto embedder = reading_list_ui_->embedder();
+   Browser* browser = chrome::FindLastActive();
++  // LOG(ERROR) << "after FindLastActive: " << url;
++
+   if (embedder)
+     embedder->ShowContextMenu(gfx::Point(x, y),
+                               std::make_unique<ReadLaterItemContextMenu>(
+diff --git a/chrome/browser/ui/webui/side_panel/reading_list/reading_list_ui.cc b/chrome/browser/ui/webui/side_panel/reading_list/reading_list_ui.cc
+index 342eb367bc..bf70735e57 100644
+--- a/chrome/browser/ui/webui/side_panel/reading_list/reading_list_ui.cc
++++ b/chrome/browser/ui/webui/side_panel/reading_list/reading_list_ui.cc
+@@ -35,6 +35,13 @@
+ #include "ui/views/style/platform_style.h"
+ #include "ui/webui/color_change_listener/color_change_handler.h"
+ 
++// #include "chrome/browser/ui/tabs/public/tab_features.h"
++// #include "chrome/browser/ui/browser_window.h"
++// #include "chrome/browser/ui/browser_window/public/browser_window_features.h"
++// #include "chrome/browser/ui/views/side_panel/customize_chrome/customize_chrome_side_panel_controller.h"
++// #include "chrome/browser/ui/views/side_panel/customize_chrome/customize_chrome_utils.h"
++// #include "chrome/browser/ui/views/side_panel/side_panel_ui.h"
++
+ ReadingListUI::ReadingListUI(content::WebUI* web_ui)
+     : TopChromeWebUIController(web_ui),
+       webui_load_timer_(web_ui->GetWebContents(),
+@@ -79,6 +86,46 @@ ReadingListUI::ReadingListUI(content::WebUI* web_ui)
+       IDR_SIDE_PANEL_READING_LIST_READING_LIST_HTML);
+   source->AddResourcePaths(base::make_span(kSidePanelSharedResources,
+                                            kSidePanelSharedResourcesSize));
++
++  source->OverrideContentSecurityPolicy(
++      network::mojom::CSPDirectiveName::ImgSrc,
++      base::StringPrintf("img-src chrome://resources chrome://theme chrome://image chrome://favicon2 chrome://favicon chrome://app-icon chrome://extension-icon chrome://fileicon blob: data: 'self'"));              
++  
++  source->OverrideContentSecurityPolicy(
++      network::mojom::CSPDirectiveName::TrustedTypes,
++      "trusted-types parse-html-subset sanitize-inner-html static-types "
++      "xml-policy "
++      // Add TrustedTypes policies for cr-lottie.
++      "lottie-worker-script-loader "
++      // Add TrustedTypes policy for <cros-lottie-renderer>.
++      "cros-lottie-worker-script-loader "
++      // Add TrustedTypes policies necessary for using CrOS' Lit bundle.
++      "lit-html "
++      // Add TrustedTypes policies necessary for using Desktop's Lit bundle.
++      "lit-html-desktop "
++      // Add TrustedTypes policies used during tests.
++      "webui-test-script webui-test-html "
++      // Add TrustedTypes policy used during Ash WebUI tests created in
++      // `//ash/webui/common/trusted_types_test_util.h`.
++      "ash-webui-test-script "
++      // Add deprecated policies for Ash WebUIs using js.
++      "ash-deprecated-sanitize-inner-html ash-deprecated-parse-html-subset "
++      // Add TrustedTypes policy for creating the PDF plugin.
++      "print-preview-plugin-loader "
++      // Add TrustedTypes policies necessary for using Polymer.
++      "polymer-html-literal polymer-template-event-attribute-policy "
++      // Add TrustedTypes policies for Google Analytics and video processor
++      // script URLs. Used by the Camera App.
++      "ga-js-static video-processor-js-static "
++      // Added TrustedTypes policy for trusted script URLs.
++      "camera-app-trusted-script file-manager-trusted-script;");
++//   source->OverrideContentSecurityPolicy(
++//       network::mojom::CSPDirectiveName::WorkerSrc,
++//       "worker-src blob: chrome://resources chrome://theme 'self';");
++
++//   tabs::TabInterface* const tab_ = tabs::TabInterface::GetFromContents(web_ui->GetWebContents()); 
++//   tab_->GetBrowserWindowInterface()->GetFeatures().side_panel_ui()->Show(SidePanelEntry::Id::kReadingList);                        
++                            
+ }
+ 
+ ReadingListUI::~ReadingListUI() = default;
+diff --git a/chrome/common/extensions/api/_api_features.json b/chrome/common/extensions/api/_api_features.json
+index 2a74aeeeb5..76cbe44164 100644
+--- a/chrome/common/extensions/api/_api_features.json
++++ b/chrome/common/extensions/api/_api_features.json
+@@ -578,10 +578,16 @@
+     "dependencies": ["permission:sharedStoragePrivate"],
+     "contexts": ["privileged_extension"]
+   },
+-  "history": {
++  "history": [{
+     "dependencies": ["permission:history"],
+     "contexts": ["privileged_extension"]
+-  },
++  }, {
++    "channel": "stable",
++    "contexts": ["webui"],
++    "matches": [
++      "chrome://read-later.top-chrome/*"
++    ]
++  }],
+   "identity": {
+     "dependencies": ["permission:identity"],
+     "contexts": ["privileged_extension"]
+@@ -796,10 +802,16 @@
+     ],
+     "platforms": ["chromeos", "lacros"]
+   },
+-  "readingList": {
++  "readingList": [{
+     "dependencies": ["permission:readingList"],
+     "contexts": ["privileged_extension"]
+-  },
++  }, {
++    "channel": "stable",
++    "contexts": ["webui"],
++    "matches": [
++      "chrome://read-later.top-chrome/*"
++    ]
++  }],
+   "resourcesPrivate": [{
+     "dependencies": ["permission:resourcesPrivate"],
+     "contexts": ["privileged_extension"]
+@@ -831,10 +843,16 @@
+     "dependencies": ["permission:search"],
+     "contexts": ["privileged_extension"]
+   },
+-  "sessions": {
++  "sessions": [{
+     "dependencies": ["permission:sessions"],
+     "contexts": ["privileged_extension"]
+-  },
++  }, {
++    "channel": "stable",
++    "contexts": ["webui"],
++    "matches": [
++      "chrome://read-later.top-chrome/*"
++    ]
++  }],
+   "settingsPrivate": [{
+     "dependencies": ["permission:settingsPrivate"],
+     "contexts": ["privileged_extension"]
+@@ -847,10 +865,16 @@
+       "chrome://password-manager/*"
+     ]
+   }],
+-  "sidePanel": {
++  "sidePanel": [{
+     "dependencies": ["permission:sidePanel"],
+     "contexts": ["privileged_extension"]
+-  },
++  }, {
++    "channel": "stable",
++    "contexts": ["webui"],
++    "matches": [
++      "chrome://read-later.top-chrome/*"
++    ]
++  }],
+   "smartCardProviderPrivate": {
+     "dependencies": ["permission:smartCardProviderPrivate"],
+     "contexts": ["privileged_extension"]
+@@ -878,10 +902,16 @@
+   "tabCapture.capture": {
+     "disallow_for_service_workers": true
+   },
+-  "tabGroups": {
++  "tabGroups": [{
+     "dependencies": ["permission:tabGroups"],
+     "contexts": ["privileged_extension"]
+-  },
++  }, {
++    "channel": "stable",
++    "contexts": ["webui"],
++    "matches": [
++      "chrome://read-later.top-chrome/*"
++    ]
++  }],
+   "tabs": [{
+     "channel": "stable",
+     "extension_types": ["extension", "legacy_packaged_app"],
+@@ -1060,7 +1090,8 @@
+     "contexts": ["webui"],
+     "matches": [
+       "chrome://bookmarks/*",
+-      "chrome://tab-strip.top-chrome/*"
++      "chrome://tab-strip.top-chrome/*",
++      "chrome://read-later.top-chrome/*"
+     ]
+   }, {
+     "channel": "stable",
+diff --git a/components/remote_cocoa/app_shim/native_widget_mac_nswindow.mm b/components/remote_cocoa/app_shim/native_widget_mac_nswindow.mm
+index 6ebc4754ef..feb35f2cb0 100644
+--- a/components/remote_cocoa/app_shim/native_widget_mac_nswindow.mm
++++ b/components/remote_cocoa/app_shim/native_widget_mac_nswindow.mm
+@@ -358,13 +358,13 @@ - (NSAccessibilityRole)accessibilityRole {
+ // NSWindow overrides.
+ 
+ + (Class)frameViewClassForStyleMask:(NSWindowStyleMask)windowStyle {
+-  if (windowStyle & NSWindowStyleMaskTitled) {
+-    if (Class customFrame = [NativeWidgetMacNSWindowTitledFrame class])
+-      return customFrame;
+-  } else if (Class customFrame =
+-                 [NativeWidgetMacNSWindowBorderlessFrame class]) {
+-    return customFrame;
+-  }
++  // if (windowStyle & NSWindowStyleMaskTitled) {
++  //   if (Class customFrame = [NativeWidgetMacNSWindowTitledFrame class])
++  //     return customFrame;
++  // } else if (Class customFrame =
++  //                [NativeWidgetMacNSWindowBorderlessFrame class]) {
++  //   return customFrame;
++  // }
+   return [super frameViewClassForStyleMask:windowStyle];
+ }
+ 
+diff --git a/components/remote_cocoa/app_shim/native_widget_ns_window_bridge.mm b/components/remote_cocoa/app_shim/native_widget_ns_window_bridge.mm
+index b3c087eda0..3ca4bbe618 100644
+--- a/components/remote_cocoa/app_shim/native_widget_ns_window_bridge.mm
++++ b/components/remote_cocoa/app_shim/native_widget_ns_window_bridge.mm
+@@ -290,40 +290,42 @@ NSUInteger CountBridgedWindows(NSArray* child_windows) {
+ NativeWidgetMacNSWindow* NativeWidgetNSWindowBridge::CreateNSWindow(
+     const mojom::CreateWindowParams* params) {
+   NativeWidgetMacNSWindow* ns_window;
+-  switch (params->window_class) {
+-    case mojom::WindowClass::kDefault:
+-      ns_window = [[NativeWidgetMacNSWindow alloc]
++  // switch (params->window_class) {
++  //   case mojom::WindowClass::kDefault:
++  //     ns_window = [[NativeWidgetMacNSWindow alloc]
++  //         initWithContentRect:ui::kWindowSizeDeterminedLater
++  //                   styleMask:params->style_mask
++  //                     backing:NSBackingStoreBuffered
++  //                       defer:NO];
++  //     break;
++  //   case mojom::WindowClass::kBrowser:
++  //     ns_window = [[BrowserNativeWidgetWindow alloc]
++  //         initWithContentRect:ui::kWindowSizeDeterminedLater
++  //                   styleMask:params->style_mask
++  //                     backing:NSBackingStoreBuffered
++  //                       defer:NO];
++  //     break;
++  //   case mojom::WindowClass::kFrameless:
++      
++  //     break;
++  // }
++
++  ns_window = [[BrowserNativeWidgetWindow alloc]
+           initWithContentRect:ui::kWindowSizeDeterminedLater
+                     styleMask:params->style_mask
+                       backing:NSBackingStoreBuffered
+                         defer:NO];
+-      break;
+-    case mojom::WindowClass::kBrowser:
+-      ns_window = [[BrowserNativeWidgetWindow alloc]
+-          initWithContentRect:ui::kWindowSizeDeterminedLater
+-                    styleMask:params->style_mask
+-                      backing:NSBackingStoreBuffered
+-                        defer:NO];
+-      break;
+-    case mojom::WindowClass::kFrameless:
+-      ns_window = [[NativeWidgetMacFramelessNSWindow alloc]
+-          initWithContentRect:ui::kWindowSizeDeterminedLater
+-                    styleMask:params->style_mask
+-                      backing:NSBackingStoreBuffered
+-                        defer:NO];
+-      break;
+-  }
+-  ns_window.releasedWhenClosed = NO;
++  // ns_window.releasedWhenClosed = NO;
+ 
+-  if (params->titlebar_appears_transparent) {
++  // if (params->titlebar_appears_transparent) {
+     ns_window.titlebarAppearsTransparent = YES;
+-  }
+-  if (params->window_title_hidden) {
++  // }
++  // if (params->window_title_hidden) {
+     ns_window.titleVisibility = NSWindowTitleHidden;
+-  }
+-  if (params->animation_enabled) {
+-    ns_window.animationBehavior = NSWindowAnimationBehaviorDocumentWindow;
+-  }
++  // }
++  // if (params->animation_enabled) {
++  //   ns_window.animationBehavior = NSWindowAnimationBehaviorDocumentWindow;
++  // }
+ 
+   return ns_window;
+ }
+@@ -470,10 +472,10 @@ NSUInteger CountBridgedWindows(NSArray* child_windows) {
+   is_translucent_window_ = params->is_translucent;
+   pending_restoration_data_ = params->state_restoration_data;
+ 
+-  if (params->is_headless_mode_window)
+-    headless_mode_window_ = std::make_optional<HeadlessModeWindow>();
++  // if (params->is_headless_mode_window)
++  //   headless_mode_window_ = std::make_optional<HeadlessModeWindow>();
+ 
+-  [window_ setIsHeadless:params->is_headless_mode_window];
++  // [window_ setIsHeadless:params->is_headless_mode_window];
+ 
+   // Register for application hide notifications so that visibility can be
+   // properly tracked. This is not done in the delegate so that the lifetime is
+@@ -500,13 +502,13 @@ NSUInteger CountBridgedWindows(NSArray* child_windows) {
+ 
+   // Include "regular" windows without the standard frame in the window cycle.
+   // These use NSWindowStyleMaskBorderless so do not get it by default.
+-  if (params->force_into_collection_cycle) {
+-    [window_
+-        setCollectionBehavior:[window_ collectionBehavior] |
+-                              NSWindowCollectionBehaviorParticipatesInCycle];
+-  }
++  // if (params->force_into_collection_cycle) {
++  //   [window_
++  //       setCollectionBehavior:[window_ collectionBehavior] |
++  //                             NSWindowCollectionBehaviorParticipatesInCycle];
++  // }
+ 
+-  [window_ setHasShadow:params->has_window_server_shadow];
++  // [window_ setHasShadow:params->has_window_server_shadow];
+ 
+   // Don't allow dragging sheets.
+   if (params->modal_type == ui::MODAL_TYPE_WINDOW)
+@@ -531,7 +533,7 @@ NSUInteger CountBridgedWindows(NSArray* child_windows) {
+     // size also depends on the window style.
+     NSRect frame_rect = [window_ frame];
+     adjusted_bounds = gfx::Rect(
+-        gfx::Point(), gfx::Size(NSWidth(frame_rect), NSHeight(frame_rect)));
++        gfx::Point(), gfx::Size(NSWidth(frame_rect) - 20, NSHeight(frame_rect) - 20));
+   }
+   SetBounds(adjusted_bounds, minimum_content_size, std::nullopt);
+ }
+@@ -559,8 +561,8 @@ NSUInteger CountBridgedWindows(NSArray* child_windows) {
+   if (!window_visible_ && IsWindowModalSheet()) {
+     // Window-Modal dialogs (i.e. sheets) are positioned by Cocoa when shown for
+     // the first time. They also have no frame, so just update the content size.
+-    [window_ setContentSize:NSMakeSize(clamped_content_size.width(),
+-                                       clamped_content_size.height())];
++    [window_ setContentSize:NSMakeSize(clamped_content_size.width() - 20,
++                                       clamped_content_size.height() - 20)];
+     return;
+   }
+   gfx::Rect actual_new_bounds(
+@@ -570,7 +572,7 @@ NSUInteger CountBridgedWindows(NSArray* child_windows) {
+   NSScreen* previous_screen = [window_ screen];
+ 
+   [window_ setFrame:gfx::ScreenRectToNSRect(actual_new_bounds)
+-            display:YES
++            display:NO
+             animate:NO];
+ 
+   // If the window has focus but is not on the active space and the window was
+@@ -1228,8 +1230,27 @@ NSUInteger CountBridgedWindows(NSArray* child_windows) {
+   // for the composited NonClientFrameView, which should be the case since the
+   // native shape is what's most appropriate for displaying sheets on Mac.
+   if (is_translucent_window_ && !IsWindowModalSheet()) {
+-    [window_ setOpaque:NO];
+-    [window_ setBackgroundColor:[NSColor clearColor]];
++    [window_ setOpaque:YES];
++    // [[window_ standardWindowButton:NSWindowCloseButton] setHidden:NO];
++
++    // [window_ setBackgroundColor:[NSColor blackColor]];
++
++     NSVisualEffectView* vibrantView = [[NSVisualEffectView alloc] initWithFrame:[[window_ contentView] bounds]];
++    [vibrantView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
++    [vibrantView setMaterial:NSVisualEffectMaterialHUDWindow];
++    [vibrantView setState:NSVisualEffectStateActive];
++
++    [vibrantView setWantsLayer:YES];
++    // vibrantView.layer.cornerRadius = 10.0; // Adjust this value as needed
++    vibrantView.layer.masksToBounds = YES;
++
++    // CALayer *tintLayer = [CALayer layer];
++    // tintLayer.backgroundColor = [[NSColor blackColor] colorWithAlphaComponent:0.9].CGColor;
++    // tintLayer.frame = vibrantView.bounds;
++    // [vibrantView.layer addSublayer:tintLayer];
++
++    [[window_ contentView] addSubview:vibrantView positioned:NSWindowBelow relativeTo:nil];
++
+ 
+     // Don't block waiting for the initial frame of completely transparent
+     // windows. This allows us to avoid blocking on the UI thread e.g, while
+diff --git a/content/browser/picture_in_picture/video_picture_in_picture_window_controller_impl.h b/content/browser/picture_in_picture/video_picture_in_picture_window_controller_impl.h
+index 3ce53db028..c1b276150c 100644
+--- a/content/browser/picture_in_picture/video_picture_in_picture_window_controller_impl.h
++++ b/content/browser/picture_in_picture/video_picture_in_picture_window_controller_impl.h
+@@ -34,7 +34,7 @@ enum class PictureInPictureResult;
+ // object and therefore handles its lifetime, and communicate with the rest of
+ // the browser. Requests to the WebContents are sent by the controller and it
+ // gets notified when the browser needs it to update the Picture-in-Picture
+-// session.
++// session. 
+ // The VideoPictureInPictureWindowControllerImpl is managing Picture-in-Picture
+ // at a WebContents level. If multiple calls request a Picture-in-Picture
+ // session either in the same frame or in different frames, the controller will
+diff --git a/content/browser/web_contents/web_contents_impl.cc b/content/browser/web_contents/web_contents_impl.cc
+index 3a6322f9ff..88f2a0e684 100644
+--- a/content/browser/web_contents/web_contents_impl.cc
++++ b/content/browser/web_contents/web_contents_impl.cc
+@@ -8208,7 +8208,7 @@ void WebContentsImpl::SetShowingContextMenu(bool showing) {
+   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::SetShowingContextMenu",
+                         "showing", showing);
+ 
+-  DCHECK_NE(showing_context_menu_, showing);
++  // DCHECK_NE(showing_context_menu_, showing);
+   showing_context_menu_ = showing;
+ 
+   if (auto* view = GetRenderWidgetHostView()) {
+diff --git a/tools/typescript/definitions/tabs.d.ts b/tools/typescript/definitions/tabs.d.ts
+index 66ac554ab0..4c8958343d 100644
+--- a/tools/typescript/definitions/tabs.d.ts
++++ b/tools/typescript/definitions/tabs.d.ts
+@@ -6,142 +6,2037 @@
+ // TODO(crbug.com/40179454): Auto-generate this file.
+ 
+ import {ChromeEvent} from './chrome_event.js';
++// import {Window} from './windows.js';
++
+ 
+ declare global {
+   export namespace chrome {
++
++
+     export namespace tabs {
+-      export enum TabStatus {
+-        UNLOADED = 'unloaded',
+-        LOADING = 'loading',
+-        COMPLETE = 'complete',
++
++      // export interface ZoomSettings {
++      //   mode?: ZoomSettingsMode;
++      //   scope?: ZoomSettingsScope;
++      //   defaultZoomFactor?: number;
++      // }
++
++      interface ActiveInfo {
++        tabId: number;
++        windowId: number;
+       }
+ 
+-      export enum MutedInfoReason {
+-        USER = 'user',
+-        CAPTURE = 'capture',
+-        EXTENSION = 'extension',
++      export interface Window {
++        id?: number;
++        focused: boolean;
++        top?: number;
++        left?: number;
++        width?: number;
++        height?: number;
++        tabs?: chrome.tabs.Tab[];
++        incognito: boolean;
++        type?: WindowType;
++        // state?: WindowState;
++        alwaysOnTop: boolean;
++        sessionId?: string;
+       }
+ 
++      /**
++       * The tab's loading status.
++       *
++       * @since Chrome 44
++       */
++      export type TabStatus = "unloaded" | "loading" | "complete";
++    
++      /**
++       * An event that caused a muted state change.
++       *
++       * @chrome-enum "user" A user input action set the muted state.
++       * @chrome-enum "capture" Tab capture was started, forcing a muted state change.
++       * @chrome-enum "extension" An extension, identified by the extensionId field, set the muted state.
++       * @since Chrome 46
++       */
++      export type MutedInfoReason = "user" | "capture" | "extension";
++    
++      /**
++       * The tab's muted state and the reason for the last state change.
++       *
++       * @since Chrome 46
++       */
+       export interface MutedInfo {
++    
++        /**
++         * Whether the tab is muted (prevented from playing sound). The tab may be muted even if it has not played or is not currently playing sound. Equivalent to whether the 'muted' audio indicator is showing.
++         */
+         muted: boolean;
++    
++        /**
++         * The reason the tab was muted or unmuted. Not set if the tab's mute state has never been changed.
++         */
+         reason?: MutedInfoReason;
++    
++        /**
++         * The ID of the extension that changed the muted state. Not set if an extension was not the reason the muted state last changed.
++         */
+         extensionId?: string;
+       }
+-
++    
+       export interface Tab {
++    
++        /**
++         * The ID of the tab. Tab IDs are unique within a browser session. Under some circumstances a tab may not be assigned an ID; for example, when querying foreign tabs using the {@link sessions} API, in which case a session ID may be present. Tab ID can also be set to `chrome.tabs.TAB_ID_NONE` for apps and devtools windows.
++         */
+         id?: number;
++    
++        /**
++         * The zero-based index of the tab within its window.
++         */
+         index: number;
++    
++        /**
++         * The ID of the group that the tab belongs to.
++         *
++         * @since Chrome 88
++         */
+         groupId: number;
++    
++        /**
++         * The ID of the window that contains the tab.
++         */
+         windowId: number;
++    
++        /**
++         * The ID of the tab that opened this tab, if any. This property is only present if the opener tab still exists.
++         */
+         openerTabId?: number;
++    
++        /**
++         * Whether the tab is selected.
++         *
++         * @deprecated Please use {@link tabs.Tab.highlighted}.
++         */
+         selected: boolean;
++    
++        /**
++         * The last time the tab was accessed as the number of milliseconds since epoch.
++         *
++         * @since Chrome 121
++         */
++        lastAccessed?: number;
++    
++        /**
++         * Whether the tab is highlighted.
++         */
+         highlighted: boolean;
++    
++        /**
++         * Whether the tab is active in its window. Does not necessarily mean the window is focused.
++         */
+         active: boolean;
++    
++        /**
++         * Whether the tab is pinned.
++         */
+         pinned: boolean;
++    
++        /**
++         * Whether the tab has produced sound over the past couple of seconds (but it might not be heard if also muted). Equivalent to whether the 'speaker audio' indicator is showing.
++         *
++         * @since Chrome 45
++         */
+         audible?: boolean;
+-        discareded: boolean;
++    
++        /**
++         * Whether the tab is discarded. A discarded tab is one whose content has been unloaded from memory, but is still visible in the tab strip. Its content is reloaded the next time it is activated.
++         *
++         * @since Chrome 54
++         */
++        discarded: boolean;
++    
++        /**
++         * Whether the tab can be discarded automatically by the browser when resources are low.
++         *
++         * @since Chrome 54
++         */
+         autoDiscardable: boolean;
++    
++        /**
++         * The tab's muted state and the reason for the last state change.
++         *
++         * @since Chrome 46
++         */
+         mutedInfo?: MutedInfo;
++    
++        /**
++         * The last committed URL of the main frame of the tab. This property is only present if the extension's manifest includes the `"tabs"` permission and may be an empty string if the tab has not yet committed. See also {@link Tab.pendingUrl}.
++         */
+         url?: string;
++    
++        /**
++         * The URL the tab is navigating to, before it has committed. This property is only present if the extension's manifest includes the `"tabs"` permission and there is a pending navigation.
++         *
++         * @since Chrome 79
++         */
+         pendingUrl?: string;
++    
++        /**
++         * The title of the tab. This property is only present if the extension's manifest includes the `"tabs"` permission.
++         */
+         title?: string;
++    
++        /**
++         * The URL of the tab's favicon. This property is only present if the extension's manifest includes the `"tabs"` permission. It may also be an empty string if the tab is loading.
++         */
+         favIconUrl?: string;
++    
++        /**
++         * The tab's loading status.
++         */
+         status?: TabStatus;
++    
++        /**
++         * Whether the tab is in an incognito window.
++         */
+         incognito: boolean;
++    
++        /**
++         * The width of the tab in pixels.
++         */
+         width?: number;
++    
++        /**
++         * The height of the tab in pixels.
++         */
+         height?: number;
++    
++        /**
++         * The session ID used to uniquely identify a tab obtained from the {@link sessions} API.
++         */
+         sessionId?: string;
+       }
+-
+-      interface CreateProperties {
+-        windowId?: number;
+-        index?: number;
+-        url?: string;
+-        active?: boolean;
+-        selected?: boolean;
+-        pinned?: boolean;
+-        openerTabId?: number;
+-      }
+-
+-      interface UpdateProperties {
+-        url?: string;
+-        active?: boolean;
+-        highlighted?: boolean;
+-        selected?: boolean;
+-        pinned?: boolean;
+-        muted?: boolean;
+-        openerTabId?: number;
+-        autoDiscardable?: boolean;
+-      }
++    
++      // /**
++      //  * Defines how zoom changes are handled, i.e., which entity is responsible for the actual scaling of the page; defaults to `automatic`.
++      //  *
++      //  * @chrome-enum "automatic" Zoom changes are handled automatically by the browser.
++      //  * @chrome-enum "manual" Overrides the automatic handling of zoom changes. The `onZoomChange` event will still be dispatched, and it is the extension's responsibility to listen for this event and manually scale the page. This mode does not support `per-origin` zooming, and thus ignores the `scope` zoom setting and assumes `per-tab`.
++      //  * @chrome-enum "disabled" Disables all zooming in the tab. The tab reverts to the default zoom level, and all attempted zoom changes are ignored.
++      //  * @since Chrome 44
++      //  */
++      // export type ZoomSettingsMode = "automatic" | "manual" | "disabled";
++    
++      // /**
++      //  * Defines whether zoom changes persist for the page's origin, or only take effect in this tab; defaults to `per-origin` when in `automatic` mode, and `per-tab` otherwise.
++      //  *
++      //  * @chrome-enum "per-origin" Zoom changes persist in the zoomed page's origin, i.e., all other tabs navigated to that same origin are zoomed as well. Moreover, `per-origin` zoom changes are saved with the origin, meaning that when navigating to other pages in the same origin, they are all zoomed to the same zoom factor. The `per-origin` scope is only available in the `automatic` mode.
++      //  * @chrome-enum "per-tab" Zoom changes only take effect in this tab, and zoom changes in other tabs do not affect the zooming of this tab. Also, `per-tab` zoom changes are reset on navigation; navigating a tab always loads pages with their `per-origin` zoom factors.
++      //  * @since Chrome 44
++      //  */
++      // export type ZoomSettingsScope = "per-origin" | "per-tab";
++    
+ 
+       enum ZoomSettingsMode {
+         AUTOMATIC = 'automatic',
+         MANUAL = 'manual',
+         DISABLED = 'disabled',
+       }
++    
+ 
+       enum ZoomSettingsScope {
+         PER_ORIGIN = 'per-origin',
+         PER_TAB = 'per-tab',
+       }
+ 
++      /**
++       * Defines how zoom changes in a tab are handled and at what scope.
++       */
+       export interface ZoomSettings {
++    
++        /**
++         * Defines how zoom changes are handled, i.e., which entity is responsible for the actual scaling of the page; defaults to `automatic`.
++         */
+         mode?: ZoomSettingsMode;
++    
++        /**
++         * Defines whether zoom changes persist for the page's origin, or only take effect in this tab; defaults to `per-origin` when in `automatic` mode, and `per-tab` otherwise.
++         */
+         scope?: ZoomSettingsScope;
++    
++        /**
++         * Used to return the default zoom level for the current tab in calls to tabs.getZoomSettings.
++         *
++         * @since Chrome 43
++         */
+         defaultZoomFactor?: number;
+       }
++    
++      /**
++       * The type of window.
++       *
++       * @since Chrome 44
++       */
++      export type WindowType = "normal" | "popup" | "panel" | "app" | "devtools";
++    
++      /**
++       * The maximum number of times that {@link captureVisibleTab} can be called per second. {@link captureVisibleTab} is expensive and should not be called too often.
++       *
++       * @since Chrome 92
++       */
++      export const MAX_CAPTURE_VISIBLE_TAB_CALLS_PER_SECOND: 2;
++    
++      /**
++       * An ID that represents the absence of a browser tab.
++       *
++       * @since Chrome 46
++       */
++      export const TAB_ID_NONE: -1;
++    
++      /**
++       * An index that represents the absence of a tab index in a tab\_strip.
++       *
++       * @since Chrome 123
++       */
++      export const TAB_INDEX_NONE: -1;
++    
++      /**
++       * Fired when a tab is created. Note that the tab's URL and tab group membership may not be set at the time this event is fired, but you can listen to onUpdated events so as to be notified when a URL is set or the tab is added to a tab group.
++       */
++      export const onCreated: ChromeEvent<(
++        tab: Tab,
++      ) => void>;
++    
++      /**
++       * Fired when a tab is updated.
++       */
++      export const onUpdated: ChromeEvent<(
++        tabId: number,
++        changeInfo: {
++    
++          /**
++           * The tab's loading status.
++           */
++          status?: TabStatus,
++    
++          /**
++           * The tab's URL if it has changed.
++           */
++          url?: string,
++    
++          /**
++           * The tab's new group.
++           *
++           * @since Chrome 88
++           */
++          groupId?: number,
++    
++          /**
++           * The tab's new pinned state.
++           */
++          pinned?: boolean,
++    
++          /**
++           * The tab's new audible state.
++           *
++           * @since Chrome 45
++           */
++          audible?: boolean,
++    
++          /**
++           * The tab's new discarded state.
++           *
++           * @since Chrome 54
++           */
++          discarded?: boolean,
++    
++          /**
++           * The tab's new auto-discardable state.
++           *
++           * @since Chrome 54
++           */
++          autoDiscardable?: boolean,
++    
++          /**
++           * The tab's new muted state and the reason for the change.
++           *
++           * @since Chrome 46
++           */
++          mutedInfo?: MutedInfo,
++    
++          /**
++           * The tab's new favicon URL.
++           */
++          favIconUrl?: string,
++    
++          /**
++           * The tab's new title.
++           *
++           * @since Chrome 48
++           */
++          title?: string,
++        },
++        tab: Tab,
++      ) => void>;
++    
++      /**
++       * Fired when a tab is moved within a window. Only one move event is fired, representing the tab the user directly moved. Move events are not fired for the other tabs that must move in response to the manually-moved tab. This event is not fired when a tab is moved between windows; for details, see {@link tabs.onDetached}.
++       */
++      export const onMoved: ChromeEvent<(
++        tabId: number,
++        moveInfo: {
++    
++          windowId: number,
++    
++          fromIndex: number,
++    
++          toIndex: number,
++        },
++      ) => void>;
++    
++      /**
++       * Fires when the selected tab in a window changes.
++       *
++       * @deprecated Please use {@link tabs.onActivated}.
++       * @chrome-max-manifest MV2
++       */
++      export const onSelectionChanged: ChromeEvent<(
++        tabId: number,
++        selectInfo: {
++    
++          /**
++           * The ID of the window the selected tab changed inside of.
++           */
++          windowId: number,
++        },
++      ) => void>;
++    
++      /**
++       * Fires when the selected tab in a window changes. Note that the tab's URL may not be set at the time this event fired, but you can listen to {@link tabs.onUpdated} events so as to be notified when a URL is set.
++       *
++       * @deprecated Please use {@link tabs.onActivated}.
++       * @chrome-max-manifest MV2
++       */
++      export const onActiveChanged: ChromeEvent<(
++        tabId: number,
++        selectInfo: {
++    
++          /**
++           * The ID of the window the selected tab changed inside of.
++           */
++          windowId: number,
++        },
++      ) => void>;
++    
++      /**
++       * Fires when the active tab in a window changes. Note that the tab's URL may not be set at the time this event fired, but you can listen to onUpdated events so as to be notified when a URL is set.
++       */
++      export const onActivated: ChromeEvent<(
++        activeInfo: {
++    
++          /**
++           * The ID of the tab that has become active.
++           */
++          tabId: number,
++    
++          /**
++           * The ID of the window the active tab changed inside of.
++           */
++          windowId: number,
++        },
++      ) => void>;
++    
++      /**
++       * Fired when the highlighted or selected tabs in a window changes.
++       *
++       * @deprecated Please use {@link tabs.onHighlighted}.
++       * @chrome-max-manifest MV2
++       */
++      export const onHighlightChanged: ChromeEvent<(
++        selectInfo: {
++    
++          /**
++           * The window whose tabs changed.
++           */
++          windowId: number,
++    
++          /**
++           * All highlighted tabs in the window.
++           */
++          tabIds: number[],
++        },
++      ) => void>;
++    
++      /**
++       * Fired when the highlighted or selected tabs in a window changes.
++       */
++      export const onHighlighted: ChromeEvent<(
++        highlightInfo: {
++    
++          /**
++           * The window whose tabs changed.
++           */
++          windowId: number,
++    
++          /**
++           * All highlighted tabs in the window.
++           */
++          tabIds: number[],
++        },
++      ) => void>;
++    
++      /**
++       * Fired when a tab is detached from a window; for example, because it was moved between windows.
++       */
++      export const onDetached: ChromeEvent<(
++        tabId: number,
++        detachInfo: {
++    
++          oldWindowId: number,
++    
++          oldPosition: number,
++        },
++      ) => void>;
++    
++      /**
++       * Fired when a tab is attached to a window; for example, because it was moved between windows.
++       */
++      export const onAttached: ChromeEvent<(
++        tabId: number,
++        attachInfo: {
++    
++          newWindowId: number,
++    
++          newPosition: number,
++        },
++      ) => void>;
++    
++      /**
++       * Fired when a tab is closed.
++       */
++      export const onRemoved: ChromeEvent<(
++        tabId: number,
++        removeInfo: {
++    
++          /**
++           * The window whose tab is closed.
++           */
++          windowId: number,
++    
++          /**
++           * True when the tab was closed because its parent window was closed.
++           */
++          isWindowClosing: boolean,
++        },
++      ) => void>;
++    
++      /**
++       * Fired when a tab is replaced with another tab due to prerendering or instant.
++       */
++      export const onReplaced: ChromeEvent<(
++        addedTabId: number,
++        removedTabId: number,
++      ) => void>;
++    
++      /**
++       * Fired when a tab is zoomed.
++       */
++      export const onZoomChange: ChromeEvent<(
++        ZoomChangeInfo: {
++    
++          tabId: number,
++    
++          oldZoomFactor: number,
++    
++          newZoomFactor: number,
++    
++          zoomSettings: ZoomSettings,
++        },
++      ) => void>;
++    
++      /**
++       * Retrieves details about the specified tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       */
++      export function get(
++    
++        tabId: number,
++      ): Promise<Tab>;
++    
++      /**
++       * Retrieves details about the specified tab.
++       */
++      export function get(
++    
++        tabId: number,
++    
++        callback?: (
++          tab: Tab,
++        ) => void,
++      ): void;
++    
++      /**
++       * Gets the tab that this script call is being made from. Returns `undefined` if called from a non-tab context (for example, a background page or popup view).
++       *
++       * @chrome-returns-extra since Chrome 88
++       */
++      export function getCurrent(): Promise<Tab | undefined>;
++    
++      /**
++       * Gets the tab that this script call is being made from. Returns `undefined` if called from a non-tab context (for example, a background page or popup view).
++       */
++      export function getCurrent(
++    
++        callback?: (
++          tab?: Tab,
++        ) => void,
++      ): void;
++    
++
++      /**
++       * Sends a single request to the content script(s) in the specified tab, with an optional callback to run when a response is sent back. The {@link extension.onRequest} event is fired in each content script running in the specified tab for the current extension.
++       *
++       * @chrome-returns-extra since Chrome 99
++       * @deprecated Please use {@link runtime.sendMessage}.
++       * @chrome-max-manifest MV2
++       */
++      export function sendRequest(
++    
++        tabId: number,
++    
++        request: any,
++      ): Promise<any>;
++    
++      /**
++       * Sends a single request to the content script(s) in the specified tab, with an optional callback to run when a response is sent back. The {@link extension.onRequest} event is fired in each content script running in the specified tab for the current extension.
++       *
++       * @deprecated Please use {@link runtime.sendMessage}.
++       * @chrome-max-manifest MV2
++       */
++      export function sendRequest(
++    
++        tabId: number,
++    
++        request: any,
++    
++        /**
++         * @param response The JSON response object sent by the handler of the request. If an error occurs while connecting to the specified tab, the callback is called with no arguments and {@link runtime.lastError} is set to the error message.
++         * @since Chrome 99
++         */
++        callback?: (
++          response: any,
++        ) => void,
++      ): void;
++    
++      /**
++       * Sends a single message to the content script(s) in the specified tab, with an optional callback to run when a response is sent back. The {@link runtime.onMessage} event is fired in each content script running in the specified tab for the current extension.
++       *
++       * @chrome-returns-extra since Chrome 99
++       * @param message The message to send. This message should be a JSON-ifiable object.
++       */
++      export function sendMessage(
++    
++        tabId: number,
++    
++        message: any,
++    
++        options?: {
++    
++          /**
++           * Send a message to a specific [frame](https://developer.chrome.com/docs/extensions/reference/webNavigation/#frame_ids) identified by `frameId` instead of all frames in the tab.
++           */
++          frameId?: number,
++    
++          /**
++           * Send a message to a specific [document](https://developer.chrome.com/docs/extensions/reference/webNavigation/#document_ids) identified by `documentId` instead of all frames in the tab.
++           *
++           * @since Chrome 106
++           */
++          documentId?: string,
++        },
++      ): Promise<any>;
++    
++      /**
++       * Sends a single message to the content script(s) in the specified tab, with an optional callback to run when a response is sent back. The {@link runtime.onMessage} event is fired in each content script running in the specified tab for the current extension.
++       *
++       * @param message The message to send. This message should be a JSON-ifiable object.
++       */
++      export function sendMessage(
++    
++        tabId: number,
++    
++        message: any,
++    
++        options?: {
++    
++          /**
++           * Send a message to a specific [frame](https://developer.chrome.com/docs/extensions/reference/webNavigation/#frame_ids) identified by `frameId` instead of all frames in the tab.
++           */
++          frameId?: number,
++    
++          /**
++           * Send a message to a specific [document](https://developer.chrome.com/docs/extensions/reference/webNavigation/#document_ids) identified by `documentId` instead of all frames in the tab.
++           *
++           * @since Chrome 106
++           */
++          documentId?: string,
++        },
++    
++        /**
++         * @param response The JSON response object sent by the handler of the message. If an error occurs while connecting to the specified tab, the callback is called with no arguments and {@link runtime.lastError} is set to the error message.
++         * @since Chrome 99
++         */
++        callback?: (
++          response: any,
++        ) => void,
++      ): void;
++    
++      /**
++       * Gets the tab that is selected in the specified window.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param windowId Defaults to the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++       * @deprecated Please use {@link tabs.query} `{active: true}`.
++       * @chrome-max-manifest MV2
++       */
++      export function getSelected(
++    
++        windowId?: number,
++      ): Promise<Tab>;
++    
++      /**
++       * Gets the tab that is selected in the specified window.
++       *
++       * @param windowId Defaults to the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++       * @deprecated Please use {@link tabs.query} `{active: true}`.
++       * @chrome-max-manifest MV2
++       */
++      export function getSelected(
++    
++        windowId?: number,
++    
++        callback?: (
++          tab: Tab,
++        ) => void,
++      ): void;
++    
++      /**
++       * Gets details about all tabs in the specified window.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param windowId Defaults to the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++       * @deprecated Please use {@link tabs.query} `{windowId: windowId}`.
++       * @chrome-max-manifest MV2
++       */
++      export function getAllInWindow(
++    
++        windowId?: number,
++      ): Promise<Tab[]>;
++    
++      /**
++       * Gets details about all tabs in the specified window.
++       *
++       * @param windowId Defaults to the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++       * @deprecated Please use {@link tabs.query} `{windowId: windowId}`.
++       * @chrome-max-manifest MV2
++       */
++      export function getAllInWindow(
++    
++        windowId?: number,
++    
++        callback?: (
++          tabs: Tab[],
++        ) => void,
++      ): void;
++    
++      /**
++       * Creates a new tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       */
++      export function create(
++    
++        createProperties: {
++    
++          /**
++           * The window in which to create the new tab. Defaults to the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++           */
++          windowId?: number,
++    
++          /**
++           * The position the tab should take in the window. The provided value is clamped to between zero and the number of tabs in the window.
++           */
++          index?: number,
++    
++          /**
++           * The URL to initially navigate the tab to. Fully-qualified URLs must include a scheme (i.e., 'http://www.google.com', not 'www.google.com'). Relative URLs are relative to the current page within the extension. Defaults to the New Tab Page.
++           */
++          url?: string,
++    
++          /**
++           * Whether the tab should become the active tab in the window. Does not affect whether the window is focused (see {@link windows.update}). Defaults to `true`.
++           */
++          active?: boolean,
++    
++          /**
++           * Whether the tab should become the selected tab in the window. Defaults to `true`
++           *
++           * @deprecated Please use _active_.
++           */
++          selected?: boolean,
++    
++          /**
++           * Whether the tab should be pinned. Defaults to `false`
++           */
++          pinned?: boolean,
++    
++          /**
++           * The ID of the tab that opened this tab. If specified, the opener tab must be in the same window as the newly created tab.
++           */
++          openerTabId?: number,
++        },
++      ): Promise<Tab>;
++    
++      /**
++       * Creates a new tab.
++       */
++      export function create(
++    
++        createProperties: {
++    
++          /**
++           * The window in which to create the new tab. Defaults to the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++           */
++          windowId?: number,
++    
++          /**
++           * The position the tab should take in the window. The provided value is clamped to between zero and the number of tabs in the window.
++           */
++          index?: number,
++    
++          /**
++           * The URL to initially navigate the tab to. Fully-qualified URLs must include a scheme (i.e., 'http://www.google.com', not 'www.google.com'). Relative URLs are relative to the current page within the extension. Defaults to the New Tab Page.
++           */
++          url?: string,
++    
++          /**
++           * Whether the tab should become the active tab in the window. Does not affect whether the window is focused (see {@link windows.update}). Defaults to `true`.
++           */
++          active?: boolean,
++    
++          /**
++           * Whether the tab should become the selected tab in the window. Defaults to `true`
++           *
++           * @deprecated Please use _active_.
++           */
++          selected?: boolean,
++    
++          /**
++           * Whether the tab should be pinned. Defaults to `false`
++           */
++          pinned?: boolean,
++    
++          /**
++           * The ID of the tab that opened this tab. If specified, the opener tab must be in the same window as the newly created tab.
++           */
++          openerTabId?: number,
++        },
++    
++        /**
++         * @param tab The created tab.
++         */
++        callback?: (
++          tab: Tab,
++        ) => void,
++      ): void;
++    
++      /**
++       * Duplicates a tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId The ID of the tab to duplicate.
++       */
++      export function duplicate(
++    
++        tabId: number,
++      ): Promise<Tab | undefined>;
++    
++      /**
++       * Duplicates a tab.
++       *
++       * @param tabId The ID of the tab to duplicate.
++       */
++      export function duplicate(
++    
++        tabId: number,
++    
++        /**
++         * @param tab Details about the duplicated tab. The {@link tabs.Tab} object does not contain `url`, `pendingUrl`, `title`, and `favIconUrl` if the `"tabs"` permission has not been requested.
++         */
++        callback?: (
++          tab?: Tab,
++        ) => void,
++      ): void;
++    
++      /**
++       * Gets all tabs that have the specified properties, or all tabs if no properties are specified.
++       *
++       * @chrome-returns-extra since Chrome 88
++       */
++      export function query(
++    
++        queryInfo: {
++    
++          /**
++           * Whether the tabs are active in their windows.
++           */
++          active?: boolean,
++    
++          /**
++           * Whether the tabs are pinned.
++           */
++          pinned?: boolean,
++    
++          /**
++           * Whether the tabs are audible.
++           *
++           * @since Chrome 45
++           */
++          audible?: boolean,
++    
++          /**
++           * Whether the tabs are muted.
++           *
++           * @since Chrome 45
++           */
++          muted?: boolean,
++    
++          /**
++           * Whether the tabs are highlighted.
++           */
++          highlighted?: boolean,
++    
++          /**
++           * Whether the tabs are discarded. A discarded tab is one whose content has been unloaded from memory, but is still visible in the tab strip. Its content is reloaded the next time it is activated.
++           *
++           * @since Chrome 54
++           */
++          discarded?: boolean,
++    
++          /**
++           * Whether the tabs can be discarded automatically by the browser when resources are low.
++           *
++           * @since Chrome 54
++           */
++          autoDiscardable?: boolean,
++    
++          /**
++           * Whether the tabs are in the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++           */
++          currentWindow?: boolean,
++    
++          /**
++           * Whether the tabs are in the last focused window.
++           */
++          lastFocusedWindow?: boolean,
++    
++          /**
++           * The tab loading status.
++           */
++          status?: TabStatus,
++    
++          /**
++           * Match page titles against a pattern. This property is ignored if the extension does not have the `"tabs"` permission.
++           */
++          title?: string,
++    
++          /**
++           * Match tabs against one or more [URL patterns](https://developer.chrome.com/docs/extensions/match_patterns). Fragment identifiers are not matched. This property is ignored if the extension does not have the `"tabs"` permission.
++           */
++          url?: string | string[],
++    
++          /**
++           * The ID of the group that the tabs are in, or {@link tabGroups.TAB_GROUP_ID_NONE} for ungrouped tabs.
++           *
++           * @since Chrome 88
++           */
++          groupId?: number,
++    
++          /**
++           * The ID of the parent window, or {@link windows.WINDOW_ID_CURRENT} for the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++           */
++          windowId?: number,
++    
++          /**
++           * The type of window the tabs are in.
++           */
++          windowType?: WindowType,
++    
++          /**
++           * The position of the tabs within their windows.
++           */
++          index?: number,
++        },
++      ): Promise<Tab[]>;
++    
++      /**
++       * Gets all tabs that have the specified properties, or all tabs if no properties are specified.
++       */
++      export function query(
++    
++        queryInfo: {
++    
++          /**
++           * Whether the tabs are active in their windows.
++           */
++          active?: boolean,
++    
++          /**
++           * Whether the tabs are pinned.
++           */
++          pinned?: boolean,
++    
++          /**
++           * Whether the tabs are audible.
++           *
++           * @since Chrome 45
++           */
++          audible?: boolean,
++    
++          /**
++           * Whether the tabs are muted.
++           *
++           * @since Chrome 45
++           */
++          muted?: boolean,
++    
++          /**
++           * Whether the tabs are highlighted.
++           */
++          highlighted?: boolean,
++    
++          /**
++           * Whether the tabs are discarded. A discarded tab is one whose content has been unloaded from memory, but is still visible in the tab strip. Its content is reloaded the next time it is activated.
++           *
++           * @since Chrome 54
++           */
++          discarded?: boolean,
++    
++          /**
++           * Whether the tabs can be discarded automatically by the browser when resources are low.
++           *
++           * @since Chrome 54
++           */
++          autoDiscardable?: boolean,
++    
++          /**
++           * Whether the tabs are in the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++           */
++          currentWindow?: boolean,
++    
++          /**
++           * Whether the tabs are in the last focused window.
++           */
++          lastFocusedWindow?: boolean,
++    
++          /**
++           * The tab loading status.
++           */
++          status?: TabStatus,
++    
++          /**
++           * Match page titles against a pattern. This property is ignored if the extension does not have the `"tabs"` permission.
++           */
++          title?: string,
++    
++          /**
++           * Match tabs against one or more [URL patterns](https://developer.chrome.com/docs/extensions/match_patterns). Fragment identifiers are not matched. This property is ignored if the extension does not have the `"tabs"` permission.
++           */
++          url?: string | string[],
++    
++          /**
++           * The ID of the group that the tabs are in, or {@link tabGroups.TAB_GROUP_ID_NONE} for ungrouped tabs.
++           *
++           * @since Chrome 88
++           */
++          groupId?: number,
++    
++          /**
++           * The ID of the parent window, or {@link windows.WINDOW_ID_CURRENT} for the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++           */
++          windowId?: number,
++    
++          /**
++           * The type of window the tabs are in.
++           */
++          windowType?: WindowType,
++    
++          /**
++           * The position of the tabs within their windows.
++           */
++          index?: number,
++        },
++    
++        callback?: (
++          result: Tab[],
++        ) => void,
++      ): void;
++    
++      /**
++       * Highlights the given tabs and focuses on the first of group. Will appear to do nothing if the specified tab is currently active.
++       *
++       * @chrome-returns-extra since Chrome 88
++       */
++      export function highlight(
++    
++        highlightInfo: {
++    
++          /**
++           * The window that contains the tabs.
++           */
++          windowId?: number,
++    
++          /**
++           * One or more tab indices to highlight.
++           */
++          tabs: number[] | number,
++        },
++      ): Promise<Window>;
++    
++      /**
++       * Highlights the given tabs and focuses on the first of group. Will appear to do nothing if the specified tab is currently active.
++       */
++      export function highlight(
++    
++        highlightInfo: {
++    
++          /**
++           * The window that contains the tabs.
++           */
++          windowId?: number,
++    
++          /**
++           * One or more tab indices to highlight.
++           */
++          tabs: number[] | number,
++        },
++    
++        /**
++         * @param window Contains details about the window whose tabs were highlighted.
++         */
++        callback?: (
++          window: Window,
++        ) => void,
++      ): void;
++    
++      /**
++       * Modifies the properties of a tab. Properties that are not specified in `updateProperties` are not modified.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId Defaults to the selected tab of the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++       */
++      export function update(
++    
++        tabId: number,
++    
++        updateProperties: {
++    
++          /**
++           * A URL to navigate the tab to. JavaScript URLs are not supported; use {@link scripting.executeScript} instead.
++           */
++          url?: string,
++    
++          /**
++           * Whether the tab should be active. Does not affect whether the window is focused (see {@link windows.update}).
++           */
++          active?: boolean,
++    
++          /**
++           * Adds or removes the tab from the current selection.
++           */
++          highlighted?: boolean,
++    
++          /**
++           * Whether the tab should be selected.
++           *
++           * @deprecated Please use _highlighted_.
++           */
++          selected?: boolean,
++    
++          /**
++           * Whether the tab should be pinned.
++           */
++          pinned?: boolean,
++    
++          /**
++           * Whether the tab should be muted.
++           *
++           * @since Chrome 45
++           */
++          muted?: boolean,
++    
++          /**
++           * The ID of the tab that opened this tab. If specified, the opener tab must be in the same window as this tab.
++           */
++          openerTabId?: number,
++    
++          /**
++           * Whether the tab should be discarded automatically by the browser when resources are low.
++           *
++           * @since Chrome 54
++           */
++          autoDiscardable?: boolean,
++        },
++      ): Promise<Tab | undefined>;
++    
++      /**
++       * Modifies the properties of a tab. Properties that are not specified in `updateProperties` are not modified.
++       *
++       * @chrome-returns-extra since Chrome 88
++       */
++      export function update(
++    
++        updateProperties: {
++    
++          /**
++           * A URL to navigate the tab to. JavaScript URLs are not supported; use {@link scripting.executeScript} instead.
++           */
++          url?: string,
++    
++          /**
++           * Whether the tab should be active. Does not affect whether the window is focused (see {@link windows.update}).
++           */
++          active?: boolean,
++    
++          /**
++           * Adds or removes the tab from the current selection.
++           */
++          highlighted?: boolean,
++    
++          /**
++           * Whether the tab should be selected.
++           *
++           * @deprecated Please use _highlighted_.
++           */
++          selected?: boolean,
++    
++          /**
++           * Whether the tab should be pinned.
++           */
++          pinned?: boolean,
++    
++          /**
++           * Whether the tab should be muted.
++           *
++           * @since Chrome 45
++           */
++          muted?: boolean,
++    
++          /**
++           * The ID of the tab that opened this tab. If specified, the opener tab must be in the same window as this tab.
++           */
++          openerTabId?: number,
++    
++          /**
++           * Whether the tab should be discarded automatically by the browser when resources are low.
++           *
++           * @since Chrome 54
++           */
++          autoDiscardable?: boolean,
++        },
++      ): Promise<Tab | undefined>;
++    
++      /**
++       * Modifies the properties of a tab. Properties that are not specified in `updateProperties` are not modified.
++       *
++       * @param tabId Defaults to the selected tab of the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++       */
++      export function update(
++    
++        tabId: number,
++    
++        updateProperties: {
++    
++          /**
++           * A URL to navigate the tab to. JavaScript URLs are not supported; use {@link scripting.executeScript} instead.
++           */
++          url?: string,
++    
++          /**
++           * Whether the tab should be active. Does not affect whether the window is focused (see {@link windows.update}).
++           */
++          active?: boolean,
++    
++          /**
++           * Adds or removes the tab from the current selection.
++           */
++          highlighted?: boolean,
++    
++          /**
++           * Whether the tab should be selected.
++           *
++           * @deprecated Please use _highlighted_.
++           */
++          selected?: boolean,
++    
++          /**
++           * Whether the tab should be pinned.
++           */
++          pinned?: boolean,
++    
++          /**
++           * Whether the tab should be muted.
++           *
++           * @since Chrome 45
++           */
++          muted?: boolean,
++    
++          /**
++           * The ID of the tab that opened this tab. If specified, the opener tab must be in the same window as this tab.
++           */
++          openerTabId?: number,
++    
++          /**
++           * Whether the tab should be discarded automatically by the browser when resources are low.
++           *
++           * @since Chrome 54
++           */
++          autoDiscardable?: boolean,
++        },
++    
++        /**
++         * @param tab Details about the updated tab. The {@link tabs.Tab} object does not contain `url`, `pendingUrl`, `title`, and `favIconUrl` if the `"tabs"` permission has not been requested.
++         */
++        callback?: (
++          tab?: Tab,
++        ) => void,
++      ): void;
++    
++      /**
++       * Modifies the properties of a tab. Properties that are not specified in `updateProperties` are not modified.
++       */
++      export function update(
++    
++        updateProperties: {
++    
++          /**
++           * A URL to navigate the tab to. JavaScript URLs are not supported; use {@link scripting.executeScript} instead.
++           */
++          url?: string,
++    
++          /**
++           * Whether the tab should be active. Does not affect whether the window is focused (see {@link windows.update}).
++           */
++          active?: boolean,
++    
++          /**
++           * Adds or removes the tab from the current selection.
++           */
++          highlighted?: boolean,
++    
++          /**
++           * Whether the tab should be selected.
++           *
++           * @deprecated Please use _highlighted_.
++           */
++          selected?: boolean,
++    
++          /**
++           * Whether the tab should be pinned.
++           */
++          pinned?: boolean,
++    
++          /**
++           * Whether the tab should be muted.
++           *
++           * @since Chrome 45
++           */
++          muted?: boolean,
++    
++          /**
++           * The ID of the tab that opened this tab. If specified, the opener tab must be in the same window as this tab.
++           */
++          openerTabId?: number,
++    
++          /**
++           * Whether the tab should be discarded automatically by the browser when resources are low.
++           *
++           * @since Chrome 54
++           */
++          autoDiscardable?: boolean,
++        },
++    
++        /**
++         * @param tab Details about the updated tab. The {@link tabs.Tab} object does not contain `url`, `pendingUrl`, `title`, and `favIconUrl` if the `"tabs"` permission has not been requested.
++         */
++        callback?: (
++          tab?: Tab,
++        ) => void,
++      ): void;
++    
++      /**
++       * Moves one or more tabs to a new position within its window, or to a new window. Note that tabs can only be moved to and from normal (window.type === "normal") windows.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabIds The tab ID or list of tab IDs to move.
++       */
++      export function move(
++    
++        tabIds: number | number[],
++    
++        moveProperties: {
++    
++          /**
++           * Defaults to the window the tab is currently in.
++           */
++          windowId?: number,
++    
++          /**
++           * The position to move the window to. Use `-1` to place the tab at the end of the window.
++           */
++          index: number,
++        },
++      ): Promise<Tab | Tab[]>;
++    
++      /**
++       * Moves one or more tabs to a new position within its window, or to a new window. Note that tabs can only be moved to and from normal (window.type === "normal") windows.
++       *
++       * @param tabIds The tab ID or list of tab IDs to move.
++       */
++      export function move(
++    
++        tabIds: number | number[],
++    
++        moveProperties: {
++    
++          /**
++           * Defaults to the window the tab is currently in.
++           */
++          windowId?: number,
++    
++          /**
++           * The position to move the window to. Use `-1` to place the tab at the end of the window.
++           */
++          index: number,
++        },
++    
++        /**
++         * @param tabs Details about the moved tabs.
++         */
++        callback?: (
++          tabs: Tab | Tab[],
++        ) => void,
++      ): void;
++    
++      /**
++       * Reload a tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId The ID of the tab to reload; defaults to the selected tab of the current window.
++       */
++      export function reload(
++    
++        tabId?: number,
++    
++        reloadProperties?: {
++    
++          /**
++           * Whether to bypass local caching. Defaults to `false`.
++           */
++          bypassCache?: boolean,
++        },
++      ): Promise<void>;
++    
++      /**
++       * Reload a tab.
++       *
++       * @param tabId The ID of the tab to reload; defaults to the selected tab of the current window.
++       */
++      export function reload(
++    
++        tabId?: number,
++    
++        reloadProperties?: {
++    
++          /**
++           * Whether to bypass local caching. Defaults to `false`.
++           */
++          bypassCache?: boolean,
++        },
++    
++        callback?: () => void,
++      ): void;
++    
++      /**
++       * Closes one or more tabs.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabIds The tab ID or list of tab IDs to close.
++       */
++      export function remove(
++    
++        tabIds: number | number[],
++      ): Promise<void>;
++    
++      /**
++       * Closes one or more tabs.
++       *
++       * @param tabIds The tab ID or list of tab IDs to close.
++       */
++      export function remove(
++    
++        tabIds: number | number[],
++    
++        callback?: () => void,
++      ): void;
++    
++      /**
++       * Adds one or more tabs to a specified group, or if no group is specified, adds the given tabs to a newly created group.
++       *
++       * @since Chrome 88
++       */
++      export function group(
++    
++        options: {
++    
++          /**
++           * The tab ID or list of tab IDs to add to the specified group.
++           */
++          tabIds: number | [number, ...number[]],
++    
++          /**
++           * The ID of the group to add the tabs to. If not specified, a new group will be created.
++           */
++          groupId?: number,
++    
++          /**
++           * Configurations for creating a group. Cannot be used if groupId is already specified.
++           */
++          createProperties?: {
++    
++            /**
++             * The window of the new group. Defaults to the current window.
++             */
++            windowId?: number,
++          },
++        },
++      ): Promise<number>;
++    
++      /**
++       * Adds one or more tabs to a specified group, or if no group is specified, adds the given tabs to a newly created group.
++       *
++       * @since Chrome 88
++       */
++      export function group(
++    
++        options: {
++    
++          /**
++           * The tab ID or list of tab IDs to add to the specified group.
++           */
++          tabIds: number | [number, ...number[]],
++    
++          /**
++           * The ID of the group to add the tabs to. If not specified, a new group will be created.
++           */
++          groupId?: number,
++    
++          /**
++           * Configurations for creating a group. Cannot be used if groupId is already specified.
++           */
++          createProperties?: {
++    
++            /**
++             * The window of the new group. Defaults to the current window.
++             */
++            windowId?: number,
++          },
++        },
++    
++        /**
++         * @param groupId The ID of the group that the tabs were added to.
++         */
++        callback?: (
++          groupId: number,
++        ) => void,
++      ): void;
++    
++      /**
++       * Removes one or more tabs from their respective groups. If any groups become empty, they are deleted.
++       *
++       * @param tabIds The tab ID or list of tab IDs to remove from their respective groups.
++       * @since Chrome 88
++       */
++      export function ungroup(
++    
++        tabIds: number | [number, ...number[]],
++      ): Promise<void>;
++    
++      /**
++       * Removes one or more tabs from their respective groups. If any groups become empty, they are deleted.
++       *
++       * @param tabIds The tab ID or list of tab IDs to remove from their respective groups.
++       * @since Chrome 88
++       */
++      export function ungroup(
++    
++        tabIds: number | [number, ...number[]],
++    
++        callback?: () => void,
++      ): void;
++    
++      /**
++       * Detects the primary language of the content in a tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId Defaults to the active tab of the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++       */
++      export function detectLanguage(
++    
++        tabId?: number,
++      ): Promise<string>;
++    
++      /**
++       * Detects the primary language of the content in a tab.
++       *
++       * @param tabId Defaults to the active tab of the [current window](https://developer.chrome.com/docs/extensions/reference/windows/#current-window).
++       */
++      export function detectLanguage(
++    
++        tabId?: number,
++    
++        /**
++         * @param language An ISO language code such as `en` or `fr`. For a complete list of languages supported by this method, see [kLanguageInfoTable](https://src.chromium.org/viewvc/chrome/trunk/src/third_party/cld/languages/internal/languages.cc). The second to fourth columns are checked and the first non-NULL value is returned, except for Simplified Chinese for which `zh-CN` is returned. For an unknown/undefined language, `und` is returned.
++         */
++        callback?: (
++          language: string,
++        ) => void,
++      ): void;
++    
++      /**
++       * Zooms a specified tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId The ID of the tab to zoom; defaults to the active tab of the current window.
++       * @param zoomFactor The new zoom factor. A value of `0` sets the tab to its current default zoom factor. Values greater than `0` specify a (possibly non-default) zoom factor for the tab.
++       */
++      export function setZoom(
++    
++        tabId: number,
++    
++        zoomFactor: number,
++      ): Promise<void>;
++    
++      /**
++       * Zooms a specified tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param zoomFactor The new zoom factor. A value of `0` sets the tab to its current default zoom factor. Values greater than `0` specify a (possibly non-default) zoom factor for the tab.
++       */
++      export function setZoom(
++    
++        zoomFactor: number,
++      ): Promise<void>;
++    
++      /**
++       * Zooms a specified tab.
++       *
++       * @param tabId The ID of the tab to zoom; defaults to the active tab of the current window.
++       * @param zoomFactor The new zoom factor. A value of `0` sets the tab to its current default zoom factor. Values greater than `0` specify a (possibly non-default) zoom factor for the tab.
++       * @param callback Called after the zoom factor has been changed.
++       */
++      export function setZoom(
++    
++        tabId: number,
++    
++        zoomFactor: number,
++    
++        callback?: () => void,
++      ): void;
++    
++      /**
++       * Zooms a specified tab.
++       *
++       * @param zoomFactor The new zoom factor. A value of `0` sets the tab to its current default zoom factor. Values greater than `0` specify a (possibly non-default) zoom factor for the tab.
++       * @param callback Called after the zoom factor has been changed.
++       */
++      export function setZoom(
++    
++        zoomFactor: number,
++    
++        callback?: () => void,
++      ): void;
++    
++      /**
++       * Gets the current zoom factor of a specified tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId The ID of the tab to get the current zoom factor from; defaults to the active tab of the current window.
++       */
++      export function getZoom(
++    
++        tabId?: number,
++      ): Promise<number>;
++    
++      /**
++       * Gets the current zoom factor of a specified tab.
++       *
++       * @param tabId The ID of the tab to get the current zoom factor from; defaults to the active tab of the current window.
++       * @param callback Called with the tab's current zoom factor after it has been fetched.
++       */
++      export function getZoom(
++    
++        tabId?: number,
++    
++        /**
++         * @param zoomFactor The tab's current zoom factor.
++         */
++        callback?: (
++          zoomFactor: number,
++        ) => void,
++      ): void;
++    
++      /**
++       * Sets the zoom settings for a specified tab, which define how zoom changes are handled. These settings are reset to defaults upon navigating the tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId The ID of the tab to change the zoom settings for; defaults to the active tab of the current window.
++       * @param zoomSettings Defines how zoom changes are handled and at what scope.
++       */
++      export function setZoomSettings(
++    
++        tabId: number,
++    
++        zoomSettings: ZoomSettings,
++      ): Promise<void>;
++    
++      /**
++       * Sets the zoom settings for a specified tab, which define how zoom changes are handled. These settings are reset to defaults upon navigating the tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param zoomSettings Defines how zoom changes are handled and at what scope.
++       */
++      export function setZoomSettings(
++    
++        zoomSettings: ZoomSettings,
++      ): Promise<void>;
++    
++      /**
++       * Sets the zoom settings for a specified tab, which define how zoom changes are handled. These settings are reset to defaults upon navigating the tab.
++       *
++       * @param tabId The ID of the tab to change the zoom settings for; defaults to the active tab of the current window.
++       * @param zoomSettings Defines how zoom changes are handled and at what scope.
++       * @param callback Called after the zoom settings are changed.
++       */
++      export function setZoomSettings(
++    
++        tabId: number,
++    
++        zoomSettings: ZoomSettings,
++    
++        callback?: () => void,
++      ): void;
++    
++      /**
++       * Sets the zoom settings for a specified tab, which define how zoom changes are handled. These settings are reset to defaults upon navigating the tab.
++       *
++       * @param zoomSettings Defines how zoom changes are handled and at what scope.
++       * @param callback Called after the zoom settings are changed.
++       */
++      export function setZoomSettings(
++    
++        zoomSettings: ZoomSettings,
++    
++        callback?: () => void,
++      ): void;
++    
++      /**
++       * Gets the current zoom settings of a specified tab.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId The ID of the tab to get the current zoom settings from; defaults to the active tab of the current window.
++       */
++      export function getZoomSettings(
++    
++        tabId?: number,
++      ): Promise<ZoomSettings>;
++    
++      /**
++       * Gets the current zoom settings of a specified tab.
++       *
++       * @param tabId The ID of the tab to get the current zoom settings from; defaults to the active tab of the current window.
++       * @param callback Called with the tab's current zoom settings.
++       */
++      export function getZoomSettings(
++    
++        tabId?: number,
++    
++        /**
++         * @param zoomSettings The tab's current zoom settings.
++         */
++        callback?: (
++          zoomSettings: ZoomSettings,
++        ) => void,
++      ): void;
++    
++      /**
++       * Discards a tab from memory. Discarded tabs are still visible on the tab strip and are reloaded when activated.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId The ID of the tab to be discarded. If specified, the tab is discarded unless it is active or already discarded. If omitted, the browser discards the least important tab. This can fail if no discardable tabs exist.
++       * @since Chrome 54
++       */
++      export function discard(
++    
++        tabId?: number,
++      ): Promise<Tab | undefined>;
++    
++      /**
++       * Discards a tab from memory. Discarded tabs are still visible on the tab strip and are reloaded when activated.
++       *
++       * @param tabId The ID of the tab to be discarded. If specified, the tab is discarded unless it is active or already discarded. If omitted, the browser discards the least important tab. This can fail if no discardable tabs exist.
++       * @param callback Called after the operation is completed.
++       * @since Chrome 54
++       */
++      export function discard(
++    
++        tabId?: number,
++    
++        /**
++         * @param tab The discarded tab, if it was successfully discarded; undefined otherwise.
++         */
++        callback?: (
++          tab?: Tab,
++        ) => void,
++      ): void;
++    
++      /**
++       * Go foward to the next page, if one is available.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId The ID of the tab to navigate forward; defaults to the selected tab of the current window.
++       * @since Chrome 72
++       */
++      export function goForward(
++    
++        tabId?: number,
++      ): Promise<void>;
++    
++      /**
++       * Go foward to the next page, if one is available.
++       *
++       * @param tabId The ID of the tab to navigate forward; defaults to the selected tab of the current window.
++       * @since Chrome 72
++       */
++      export function goForward(
++    
++        tabId?: number,
++    
++        callback?: () => void,
++      ): void;
++    
++      /**
++       * Go back to the previous page, if one is available.
++       *
++       * @chrome-returns-extra since Chrome 88
++       * @param tabId The ID of the tab to navigate back; defaults to the selected tab of the current window.
++       * @since Chrome 72
++       */
++      export function goBack(
++    
++        tabId?: number,
++      ): Promise<void>;
++    
++      /**
++       * Go back to the previous page, if one is available.
++       *
++       * @param tabId The ID of the tab to navigate back; defaults to the selected tab of the current window.
++       * @since Chrome 72
++       */
++      export function goBack(
++    
++        tabId?: number,
++    
++        callback?: () => void,
++      ): void;
++    }
++    
++    /**
++     * Use the `chrome.topSites` API to access the top sites (i.e. most visited sites) that are displayed on the new tab page. These do not include shortcuts customized by the user.
++     *
++     * @chrome-permission topSites
++     */
++    export namespace topSites {
++    
++      /**
++       * An object encapsulating a most visited URL, such as the default shortcuts on the new tab page.
++       */
++      export interface MostVisitedURL {
++    
++        /**
++         * The most visited URL.
++         */
++        url: string;
++    
++        /**
++         * The title of the page
++         */
++        title: string;
++      }
++    
++      /**
++       * Gets a list of top sites.
++       *
++       * @chrome-returns-extra since Chrome 96
++       */
++      export function get(): Promise<MostVisitedURL[]>;
++    
++      /**
++       * Gets a list of top sites.
++       */
++      export function get(
++    
++        callback?: (
++          data: MostVisitedURL[],
++        ) => void,
++      ): void;
++    }
++    
+ 
+-      export const TAB_ID_NONE: number;
+ 
+-      export function get(tabId: number, callback: (tab: Tab) => void): void;
++    // export namespace tabs {
++    //   export enum TabStatus {
++    //     UNLOADED = 'unloaded',
++    //     LOADING = 'loading',
++    //     COMPLETE = 'complete',
++    //   }
+ 
+-      export function getCurrent(callback: (tab?: Tab) => void): void;
++    //   export enum MutedInfoReason {
++    //     USER = 'user',
++    //     CAPTURE = 'capture',
++    //     EXTENSION = 'extension',
++    //   }
+ 
+-      export function create(
+-          createProperties: CreateProperties,
+-          callback?: (p1: Tab) => void): void;
++    //   export interface MutedInfo {
++    //     muted: boolean;
++    //     reason?: MutedInfoReason;
++    //     extensionId?: string;
++    //   }
+ 
+-      export function update(
+-          tabId: number|undefined, updateProperties: UpdateProperties,
+-          callback?: (p1?: Tab) => void): void;
++    //   export interface Tab {
++    //     id?: number;
++    //     index: number;
++    //     groupId: number;
++    //     windowId: number;
++    //     openerTabId?: number;
++    //     selected: boolean;
++    //     highlighted: boolean;
++    //     active: boolean;
++    //     pinned: boolean;
++    //     audible?: boolean;
++    //     discareded: boolean;
++    //     autoDiscardable: boolean;
++    //     mutedInfo?: MutedInfo;
++    //     url?: string;
++    //     pendingUrl?: string;
++    //     title?: string;
++    //     favIconUrl?: string;
++    //     status?: TabStatus;
++    //     incognito: boolean;
++    //     width?: number;
++    //     height?: number;
++    //     sessionId?: string;
++    //   }
+ 
+-      export function reload(tabId: number): void;
++    //   interface CreateProperties {
++    //     windowId?: number;
++    //     index?: number;
++    //     url?: string;
++    //     active?: boolean;
++    //     selected?: boolean;
++    //     pinned?: boolean;
++    //     openerTabId?: number;
++    //   }
+ 
+-      export function query(queryInfo: QueryInfo): Promise<Tab[]>;
++    //   interface UpdateProperties {
++    //     url?: string;
++    //     active?: boolean;
++    //     highlighted?: boolean;
++    //     selected?: boolean;
++    //     pinned?: boolean;
++    //     muted?: boolean;
++    //     openerTabId?: number;
++    //     autoDiscardable?: boolean;
++    //   }
+ 
+-      export function setZoom(
+-          tabId: number|undefined, zoomFactor: number,
+-          callback?: () => void): void;
+-      export function getZoom(
+-          tabId: number|undefined, callback: (zoom: number) => void): void;
+-      export function setZoomSettings(
+-          tabId: number|undefined, zoomSettings: ZoomSettings,
+-          callback?: () => void): void;
+-      export function getZoomSettings(
+-          tabId: number|undefined,
+-          callback: (settings: ZoomSettings) => void): void;
++    //   enum ZoomSettingsMode {
++    //     AUTOMATIC = 'automatic',
++    //     MANUAL = 'manual',
++    //     DISABLED = 'disabled',
++    //   }\
++    
+ 
+-      interface ActiveInfo {
+-        tabId: number;
+-        windowId: number;
+-      }
++    //   enum ZoomSettingsScope {
++    //     PER_ORIGIN = 'per-origin',
++    //     PER_TAB = 'per-tab',
++    //   }
+ 
+-      interface ChangeInfo {}
++    //   export interface ZoomSettings {
++    //     mode?: ZoomSettingsMode;
++    //     scope?: ZoomSettingsScope;
++    //     defaultZoomFactor?: number;
++    //   }
+ 
+-      interface QueryInfo {
+-        active?: boolean;
+-        currentWindow?: boolean;
+-      }
++    //   export const TAB_ID_NONE: number;
+ 
+-      interface ZoomChangeInfo {
+-        tabId: number;
+-        newZoomFactor: number;
+-      }
++    //   export function get(tabId: number, callback: (tab: Tab) => void): void;
+ 
+-      export const onActivated: ChromeEvent<(info: ActiveInfo) => void>;
+-      export const onUpdated: ChromeEvent<(
+-        tabId: number, changeInfo: ChangeInfo, tab: Tab) => void>;
+-      export const onZoomChange: ChromeEvent<(info: ZoomChangeInfo) => void>;
+-    }
++    //   export function getCurrent(callback: (tab?: Tab) => void): void;
++
++    //   export function create(
++    //       createProperties: CreateProperties,
++    //       callback?: (p1: Tab) => void): void;
++
++    //   export function update(
++    //       tabId: number|undefined, updateProperties: UpdateProperties,
++    //       callback?: (p1?: Tab) => void): void;
++
++    //   export function reload(tabId: number): void;
++
++    //   export function query(queryInfo: QueryInfo): Promise<Tab[]>;
++
++    //   export function setZoom(
++    //       tabId: number|undefined, zoomFactor: number,
++    //       callback?: () => void): void;
++    //   export function getZoom(
++    //       tabId: number|undefined, callback: (zoom: number) => void): void;
++    //   export function setZoomSettings(
++    //       tabId: number|undefined, zoomSettings: ZoomSettings,
++    //       callback?: () => void): void;
++    //   export function getZoomSettings(
++    //       tabId: number|undefined,
++    //       callback: (settings: ZoomSettings) => void): void;
++
++
++
++    //   interface ChangeInfo {}
++
++    //   interface QueryInfo {
++    //     active?: boolean;
++    //     currentWindow?: boolean;
++    //   }
++
++    //   interface ZoomChangeInfo {
++    //     tabId: number;
++    //     newZoomFactor: number;
++    //   }
++
++    //   export const onActivated: ChromeEvent<(info: ActiveInfo) => void>;
++    //   export const onUpdated: ChromeEvent<(
++    //     tabId: number, changeInfo: ChangeInfo, tab: Tab) => void>;
++    //   export const onZoomChange: ChromeEvent<(info: ZoomChangeInfo) => void>;
++    // }
+   }
+ }
++
++
++
+diff --git a/ui/views/widget/native_widget_mac.mm b/ui/views/widget/native_widget_mac.mm
+index 6e49e5fd88..3c5e81a5e9 100644
+--- a/ui/views/widget/native_widget_mac.mm
++++ b/ui/views/widget/native_widget_mac.mm
+@@ -60,19 +60,19 @@ uint64_t StyleMaskForParams(const Widget::InitParams& params) {
+   // NSWindowStyleMaskBorderless, the parent window still accepts input.
+   // NSWindowStyleMaskFullSizeContentView ensures that calculating the modal's
+   // content rect doesn't account for a nonexistent title bar.
+-  if (params.delegate &&
+-      params.delegate->GetModalType() == ui::MODAL_TYPE_WINDOW)
+-    return NSWindowStyleMaskTitled | NSWindowStyleMaskFullSizeContentView;
++  // if (params.delegate &&
++  //     params.delegate->GetModalType() == ui::MODAL_TYPE_WINDOW)
++  //   return NSWindowStyleMaskTitled | NSWindowStyleMaskFullSizeContentView;
+ 
+-  // TODO(tapted): Determine better masks when there are use cases for it.
+-  if (params.remove_standard_frame)
+-    return NSWindowStyleMaskBorderless;
++  // // TODO(tapted): Determine better masks when there are use cases for it.
++  // if (params.remove_standard_frame)
++  //   return NSWindowStyleMaskFullSizeContentView | NSWindowStyleMaskTitled | NSWindowStyleMaskResizable;
+ 
+-  if (params.type == Widget::InitParams::TYPE_WINDOW) {
+-    return NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+-           NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
+-  }
+-  return NSWindowStyleMaskBorderless;
++  // if (params.type == Widget::InitParams::TYPE_WINDOW) {
++  //   return NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
++  //          NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
++  // }
++  return NSWindowStyleMaskFullSizeContentView | NSWindowStyleMaskTitled;
+ }
+ 
+ CGWindowLevel CGWindowLevelForZOrderLevel(ui::ZOrderLevel level,
+@@ -224,7 +224,7 @@ void OnDidChangeFocus(View* focused_before, View* focused_now) override {
+   create_window_params->window_class =
+       remote_cocoa::mojom::WindowClass::kDefault;
+   create_window_params->style_mask = StyleMaskForParams(params);
+-  create_window_params->titlebar_appears_transparent = false;
++  create_window_params->titlebar_appears_transparent = true;
+   create_window_params->window_title_hidden = false;
+   PopulateCreateWindowParams(params, create_window_params.get());
+ 

@@ -1,0 +1,14 @@
+how to use the sidepanel, you ask?
+
+it's simple. make sure you click "show reading list", and the sidepanel for reading list appears.
+in settings, change the sidepanel location to left or right, depending on your preference. i do left.
+
+features:
+- to close a tab, use the command ctrl-w
+- tabs reorder automagically based on recency.
+- resize the sidepanel, to your liking.
+- also, just use a single window.
+- omnibox in middle (on a 14-inch mac), otherwise it's offset randomly
+- fit like 34 tabs on a 14 inch screen.
+- omnibox also blurred transparent, which looks nice
+- other things that i dont remember

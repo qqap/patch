@@ -2,6 +2,11 @@ how to use the sidepanel, you ask?
 
 apply on commit 3ef7c35e44483401eefa92629d8e1e179819ac84
 
+if apple says you are not allowed to open the app, or it's damaged, just do
+xattr -l /path/to/application.app
+xattr -dr com. apple. quarantine /path/to/application.app
+and other attributes you see.
+
 it's simple. make sure you click "show reading list", and the sidepanel for reading list appears.
 in settings, change the sidepanel location to left or right, depending on your preference. i do left.
 

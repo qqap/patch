@@ -14,4 +14,5 @@ features:
 - fit like 34 tabs on a 14 inch screen.
 - omnibox also blurred transparent, which looks nice
 - picture in picture, looks rounded with shadow, better
+- customize color with chrome://customize-chrome-side-panel.top-chrome
 - other things that i dont remember

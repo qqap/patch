@@ -8,7 +8,7 @@ xattr -dr com.apple.quarantine /path/to/application.app
 and other attributes you see.
 
 it's simple. make sure you click "show reading list", and the sidepanel for reading list appears.
-in settings, change the sidepanel location to left or right, depending on your preference. i do left.
+in settings, change the sidepanel location to left since right is borked.
 
 features:
 - to close a tab, use the command ctrl-w

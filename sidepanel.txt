@@ -12,6 +12,7 @@ in settings, change the sidepanel location to left since right is borked.
 
 features:
 - to close a tab, use the command ctrl-w
+- or click and drag for a box to appear, and once it's red, it will close all intersecting tabs
 - tabs reorder automagically based on recency.
 - resize the sidepanel, to your liking.
 - also, just use a single window.

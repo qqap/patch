@@ -18,6 +18,7 @@ features:
 - omnibox in middle (on a 14-inch mac), otherwise it's offset randomly
 - fit like 34 tabs on a 14 inch screen.
 - omnibox also blurred transparent, which looks nice
+- right click on a tab, view a native macos context menu
 - picture in picture, looks rounded with shadow, better
 - customize color with chrome://customize-chrome-side-panel.top-chrome
 - new tab page actually blank

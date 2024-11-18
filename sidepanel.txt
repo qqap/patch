@@ -1,14 +1,12 @@
-how to use the sidepanel, you ask?
-
-apply on commit 3ef7c35e44483401eefa92629d8e1e179819ac84
-
 if apple says you are not allowed to open the app, or it's damaged, just do
+--------------------------------
 xattr -l /path/to/application.app
 xattr -dr com.apple.quarantine /path/to/application.app
-and other attributes you see.
+--------------------------------
+and if needed on other attributes you see when you list the attributes
 
-it's simple. make sure you click "show reading list", and the sidepanel for reading list appears.
-in settings, change the sidepanel location to left since right is borked.
+then make sure you click "show reading list", and the sidepanel for reading list appears.
+in settings, change the sidepanel location to left since right panel is borked.
 
 features:
 - to close a tab, use the command ctrl-w
@@ -28,3 +26,5 @@ features:
 
 autoninja -C out/Default chrome  && ./out/Default/Chromium.app/Contents/MacOS/Chromium --use-mock-keychain \
 --disable-features=DialMediaRouteProvider --enable-ui-devtools --user-data-dir=~/data2 --remote-debugging-port=9222
+
+apply on commit 3ef7c35e44483401eefa92629d8e1e179819ac84

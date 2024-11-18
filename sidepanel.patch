@@ -111,10 +111,10 @@ index 2d0a7eb4c2..a83b0f8726 100644
    webui_context_type = "trusted"
  }
 diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list.html b/chrome/browser/resources/side_panel/reading_list/reading_list.html
-index e083b573ac..3fc896d549 100644
+index e083b573ac..606450eb28 100644
 --- a/chrome/browser/resources/side_panel/reading_list/reading_list.html
 +++ b/chrome/browser/resources/side_panel/reading_list/reading_list.html
-@@ -8,7 +8,7 @@
+@@ -8,9 +8,18 @@
    <style>
      html,
      body {
@@ -122,10 +122,107 @@ index e083b573ac..3fc896d549 100644
 +      background: var(--color-sys-base);
        margin: 0;
      }
++
++    .drag-select {
++      background-color: rgba(20, 137, 189, 0.5);
++    }
++
++    .intersected {
++      border: 5px solid black;
++      box-sizing: border-box;
++    }
    </style>
-@@ -19,3 +19,12 @@
+ </head>
+ <body>
+@@ -18,4 +27,98 @@
+   <script type="module" src="reading_list_app.js"></script>
    </script>
  </body>
++<script>
++
++const selectables = [];
++
++function initSelectables() {
++  const app = document.querySelector("reading-list-app");
++  if (!app?.shadowRoot) {
++    setTimeout(initSelectables, 100); // Retry after 100ms
++    return;
++  }
++
++  const selectableElems = app.shadowRoot.querySelectorAll(".selectable");
++  if (!selectableElems || selectableElems.length === 0) {
++    setTimeout(initSelectables, 100); // Retry after 100ms
++    return;
++  }
++
++  for (const selectable of selectableElems) {
++    const {x, y, width, height} = selectable.getBoundingClientRect();
++    selectables.push({x: x + window.scrollX, y: y + window.scrollY, width, height, elem: selectable});
++    selectable.dataset.info = JSON.stringify({x, y, width, height});
++  }
++}
++
++initSelectables();
++setInterval(initSelectables, 1000); // Keep refreshing every second
++
++function checkSelected(selectAreaElem) {
++  const select = selectAreaElem.getBoundingClientRect();
++  const {x, y, height, width} = select;
++  
++  // Only check intersections if selection area is at least 5x5 pixels
++  if (height < 5 || width < 10) {
++    return;
++  }
++
++  for (const selectable of selectables) {
++    if (checkRectIntersection({x: x + window.scrollX, y: y + window.scrollY, height, width}, selectable)){
++      selectable.elem.classList.add("intersected");
++    } else {
++      selectable.elem.classList.remove("intersected");
++    }
++  }
++}
++
++function checkRectIntersection(r1, r2) {
++  return !(r1.x + r1.width  < r2.x ||
++           r2.x + r2.width  < r1.x ||
++           r1.y + r1.height < r2.y ||
++           r2.y + r2.height < r1.y);
++}
++
++addEventListener("pointerdown", createSelectAreaDiv);
++async function createSelectAreaDiv(event) {
++  event.preventDefault();
++  const x = event.pageX;
++  const y = event.pageY;
++
++  const div = document.createElement("div");
++  div.style.position = "absolute";
++  div.style.width = "0";
++  div.style.height = "0";
++  div.style.left = x + "px";
++  div.style.top = y + "px";
++  div.classList.add("drag-select");
++  document.body.append(div);
++
++  function resize(event) {
++    const diffX = event.pageX - x;
++    const diffY = event.pageY - y;
++    div.style.left = diffX < 0 ? x + diffX + "px" : x + "px";
++    div.style.top = diffY < 0 ? y + diffY + "px" : y + "px";
++    div.style.height = Math.abs(diffY) + "px";
++    div.style.width = Math.abs(diffX) + "px";
++    checkSelected(div); // extra line 1
++  }
++  selectables.forEach(item => item.elem.classList.remove("intersected"));
++  addEventListener("pointermove", resize);
++  addEventListener("pointerup", () => {
++    removeEventListener("pointermove", resize);
++    div.remove();
++  });
++}
++
++</script>
  </html>
 +
 +<!-- 
@@ -138,10 +235,10 @@ index e083b573ac..3fc896d549 100644
 +" -->
 \ No newline at end of file
 diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list_app.html.ts b/chrome/browser/resources/side_panel/reading_list/reading_list_app.html.ts
-index 456f47e714..d3aa18dfa6 100644
+index 456f47e714..43b094dc60 100644
 --- a/chrome/browser/resources/side_panel/reading_list/reading_list_app.html.ts
 +++ b/chrome/browser/resources/side_panel/reading_list/reading_list_app.html.ts
-@@ -3,62 +3,86 @@
+@@ -3,62 +3,84 @@
  // found in the LICENSE file.
  
  import {html} from '//resources/lit/v3_0/lit.rollup.js';
@@ -176,7 +273,7 @@ index 456f47e714..d3aa18dfa6 100644
 -            aria-label="${this.ariaLabel_(item)}" class="unread-item"
 -            .data="${item}" ?button-ripples="${this.buttonRipples}">
 +  ${this.openTabs_.map((tab, index) => html`
-+        <reading-list-item data-index="${index}"
++        <reading-list-item class="selectable" data-index="${index}"
 +            .data="${tab}">
          </reading-list-item>
 -      `)}
@@ -210,11 +307,10 @@ index 456f47e714..d3aa18dfa6 100644
 -    </cr-button>
 -  </sp-footer>
 -</div>
+-<!--_html_template_end_-->`;
 +      `)
 +    }
-+      
-+
- <!--_html_template_end_-->`;
++    <!--_html_template_end_-->`;
  }
 +
 +
@@ -631,10 +727,10 @@ index 1b1b71a45e..12dd20455c 100644
 +  }
 \ No newline at end of file
 diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list_item.html.ts b/chrome/browser/resources/side_panel/reading_list/reading_list_item.html.ts
-index a94c369cc7..619478db50 100644
+index a94c369cc7..be7327d89c 100644
 --- a/chrome/browser/resources/side_panel/reading_list/reading_list_item.html.ts
 +++ b/chrome/browser/resources/side_panel/reading_list/reading_list_item.html.ts
-@@ -9,28 +9,45 @@ import type {ReadingListItemElement} from './reading_list_item.js';
+@@ -9,28 +9,44 @@ import type {ReadingListItemElement} from './reading_list_item.js';
  export function getHtml(this: ReadingListItemElement) {
    // clang-format off
    return html`<!--_html_template_start_-->
@@ -661,7 +757,6 @@ index a94c369cc7..619478db50 100644
 -  </cr-icon-button>
 -</cr-url-list-item>
 +  <button 
-+
 +  style="${this.data.highlighted ? 'background-color: #ffffff38;' : ''}"
 +
 +    highlighted="${this.data.highlighted}"
@@ -703,7 +798,7 @@ index a94c369cc7..619478db50 100644
 +//   </cr-icon-button>
 +// </cr-url-list-item>
 diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list_item.ts b/chrome/browser/resources/side_panel/reading_list/reading_list_item.ts
-index 5e93ea84ee..f6054a4ee9 100644
+index 5e93ea84ee..81f4e0681d 100644
 --- a/chrome/browser/resources/side_panel/reading_list/reading_list_item.ts
 +++ b/chrome/browser/resources/side_panel/reading_list/reading_list_item.ts
 @@ -7,12 +7,13 @@ import 'chrome://resources/cr_elements/cr_icon_button/cr_icon_button.js';
@@ -733,7 +828,7 @@ index 5e93ea84ee..f6054a4ee9 100644
  
  export interface ReadingListItemElement {
    $: {
-@@ -53,13 +54,23 @@ export class ReadingListItemElement extends ReadingListItemElementBase {
+@@ -53,125 +54,151 @@ export class ReadingListItemElement extends ReadingListItemElementBase {
      };
    }
  
@@ -764,9 +859,10 @@ index 5e93ea84ee..f6054a4ee9 100644
    };
  
    buttonRipples: boolean = false;
-@@ -67,111 +78,116 @@ export class ReadingListItemElement extends ReadingListItemElementBase {
+   private apiProxy_: ReadingListApiProxy =
        ReadingListApiProxyImpl.getInstance();
- 
+-
++      
    override firstUpdated() {
 -    this.addEventListener('click', this.onClick_);
 -    this.addEventListener('auxclick', this.onAuxClick_.bind(this));
@@ -792,9 +888,20 @@ index 5e93ea84ee..f6054a4ee9 100644
 -      ctrlKey: e.ctrlKey,
 -      metaKey: e.metaKey,
 -      shiftKey: e.shiftKey,
--    });
--  }
--
++    // this.addEventListener('keydown', this.onKeyDown_.bind(this));
++
++    document.addEventListener('pointerup', () => {
++      // Check if this element has both classes after pointer up
++      if (this.classList.contains('selectable') && 
++          this.classList.contains('intersected')) {
++        // Remove the tab if it exists
++        if (this.data.id) {
++          chrome.tabs.remove(this.data.id);
++        }
++      }
+     });
+   }
+ 
 -  private onClick_(e: MouseEvent|KeyboardEvent) {
 -    this.apiProxy_.openUrl(this.data.url, true, {
 -      middleButton: false,
@@ -804,9 +911,6 @@ index 5e93ea84ee..f6054a4ee9 100644
 -      shiftKey: e.shiftKey,
 -    });
 -  }
-+    // this.addEventListener('keydown', this.onKeyDown_.bind(this));
-+  }
-+
 +  // override focus() {
 +  //   this.$.crUrlListItem.focus();
 +  // }
@@ -874,6 +978,10 @@ index 5e93ea84ee..f6054a4ee9 100644
 -        assertNotReached();
 -    }
 -    e.preventDefault();
+-    e.stopPropagation();
+-  }
+-
+-  protected onUpdateStatusClick_(e: Event) {
 +    this.apiProxy_.showContextMenuForUrl({url: this.data.url!}, e.clientX, e.clientY);
 +  }
 +
@@ -925,18 +1033,14 @@ index 5e93ea84ee..f6054a4ee9 100644
 +
 +  protected async onTabHighlight(e: Event) {
      e.stopPropagation();
-+    await chrome.tabs.highlight({tabs: this.data.index!});
-   }
- 
--  protected onUpdateStatusClick_(e: Event) {
--    e.stopPropagation();
 -    this.apiProxy_.updateReadStatus(this.data.url, !this.data.read);
 -    if (!this.data.read) {
 -      this.dispatchEvent(new CustomEvent(
 -          MARKED_AS_READ_UI_EVENT, {bubbles: true, composed: true}));
 -    }
--  }
--
++    await chrome.tabs.highlight({tabs: this.data.index!});
+   }
+ 
 -  protected onItemDeleteClick_(e: Event) {
 -    e.stopPropagation();
 -    this.apiProxy_.removeEntry(this.data.url);
@@ -1957,7 +2061,7 @@ index 5039b2d627..367e3e70d6 100644
      embedder->ShowContextMenu(gfx::Point(x, y),
                                std::make_unique<ReadLaterItemContextMenu>(
 diff --git a/chrome/browser/ui/webui/side_panel/reading_list/reading_list_ui.cc b/chrome/browser/ui/webui/side_panel/reading_list/reading_list_ui.cc
-index 342eb367bc..bf70735e57 100644
+index 342eb367bc..89a89fa45e 100644
 --- a/chrome/browser/ui/webui/side_panel/reading_list/reading_list_ui.cc
 +++ b/chrome/browser/ui/webui/side_panel/reading_list/reading_list_ui.cc
 @@ -35,6 +35,13 @@
@@ -1974,10 +2078,14 @@ index 342eb367bc..bf70735e57 100644
  ReadingListUI::ReadingListUI(content::WebUI* web_ui)
      : TopChromeWebUIController(web_ui),
        webui_load_timer_(web_ui->GetWebContents(),
-@@ -79,6 +86,46 @@ ReadingListUI::ReadingListUI(content::WebUI* web_ui)
+@@ -79,6 +86,50 @@ ReadingListUI::ReadingListUI(content::WebUI* web_ui)
        IDR_SIDE_PANEL_READING_LIST_READING_LIST_HTML);
    source->AddResourcePaths(base::make_span(kSidePanelSharedResources,
                                             kSidePanelSharedResourcesSize));
++
++  source->OverrideContentSecurityPolicy(
++      network::mojom::CSPDirectiveName::ScriptSrc,
++      "script-src chrome://resources chrome://webui-test 'unsafe-inline' 'self';");
 +
 +  source->OverrideContentSecurityPolicy(
 +      network::mojom::CSPDirectiveName::ImgSrc,

@@ -111,7 +111,7 @@ index 2d0a7eb4c2..a83b0f8726 100644
    webui_context_type = "trusted"
  }
 diff --git a/chrome/browser/resources/side_panel/reading_list/reading_list.html b/chrome/browser/resources/side_panel/reading_list/reading_list.html
-index e083b573ac..606450eb28 100644
+index e083b573ac..57939057e2 100644
 --- a/chrome/browser/resources/side_panel/reading_list/reading_list.html
 +++ b/chrome/browser/resources/side_panel/reading_list/reading_list.html
 @@ -8,9 +8,18 @@
@@ -122,10 +122,10 @@ index e083b573ac..606450eb28 100644
 +      background: var(--color-sys-base);
        margin: 0;
      }
-+
++/* 
 +    .drag-select {
 +      background-color: rgba(20, 137, 189, 0.5);
-+    }
++    } */
 +
 +    .intersected {
 +      border: 5px solid black;
@@ -134,7 +134,7 @@ index e083b573ac..606450eb28 100644
    </style>
  </head>
  <body>
-@@ -18,4 +27,98 @@
+@@ -18,4 +27,107 @@
    <script type="module" src="reading_list_app.js"></script>
    </script>
  </body>
@@ -171,6 +171,7 @@ index e083b573ac..606450eb28 100644
 +  
 +  // Only check intersections if selection area is at least 5x5 pixels
 +  if (height < 5 || width < 10) {
++    selectables.forEach(item => item.elem.classList.remove("intersected"));
 +    return;
 +  }
 +
@@ -212,7 +213,15 @@ index e083b573ac..606450eb28 100644
 +    div.style.top = diffY < 0 ? y + diffY + "px" : y + "px";
 +    div.style.height = Math.abs(diffY) + "px";
 +    div.style.width = Math.abs(diffX) + "px";
-+    checkSelected(div); // extra line 1
++    
++    // Change color based on size while resizing
++    if (Math.abs(diffY) < 5 || Math.abs(diffX) < 10) {
++      div.style.backgroundColor = "rgba(0, 0, 255, 0.5)"; // Blue
++    } else {
++      div.style.backgroundColor = "rgba(255, 0, 0, 0.5)"; // Red
++    }
++    
++    checkSelected(div);
 +  }
 +  selectables.forEach(item => item.elem.classList.remove("intersected"));
 +  addEventListener("pointermove", resize);

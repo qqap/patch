@@ -24,3 +24,6 @@ features:
 - new tab page actually blank
 - use youtube-music instead of spotify. torrent instead of netflix.
 - other things that i dont remember
+
+autoninja -C out/Default chrome  && ./out/Default/Chromium.app/Contents/MacOS/Chromium --use-mock-keychain \
+--disable-features=DialMediaRouteProvider --enable-ui-devtools --user-data-dir=~/data2 --remote-debugging-port=9222

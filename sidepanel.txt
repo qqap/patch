@@ -7,6 +7,7 @@ and if needed on other attributes you see when you list the attributes
 
 then make sure you click "show reading list", and the sidepanel for reading list appears.
 in settings, change the sidepanel location to left since right panel is borked.
+on macos, set show scrollbars to when scrolling.
 
 features:
 - to close a tab, use the command ctrl-w
